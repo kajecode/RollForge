@@ -1,0 +1,560 @@
+[
+  {
+    "_id": "f795222aed53afc628e327d5",
+    "name": "Umbral Quartz",
+    "slug": "umbral-quartz",
+    "regions": [
+      "e2610dc9754b54ddfcf610a6",
+      "0c8f42a8be0a24234573fcfa",
+      "4e310c25113cb93232ca64f2",
+      "cd398245e63621f95d140902",
+      "e23ec5f768a69bb89b1fe69b"
+    ]
+  },
+  {
+    "_id": "d7c11dd946ba58bad22cedb8",
+    "name": "Ranger's Leather",
+    "slug": "rangers-leather",
+    "regions": [
+      "501f50049cc337d1c5f0442f"
+    ],
+    "blackmarket": "rare",
+    "metadata": {
+      "description": "Supple hides cured in ley-infused oils, used by Rangers of Eryndor.",
+      "mechanics": "Boots, cloaks, armor: items grant +2 to Stealth checks in wilderness terrain.",
+      "notes": "Legally restricted to Ranger orders.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "rarity": "uncommon",
+    "unit": "cured hide",
+    "unit_price_gp": 150
+  },
+  {
+    "_id": "846dfff19d5ac2027e2cbc2e",
+    "name": "Verdantwood",
+    "slug": "verdantwood",
+    "regions": [
+      "cd398245e63621f95d140902"
+    ],
+    "blackmarket": "yes",
+    "metadata": {
+      "description": "Ley-grown timber that glows faintly green when cut.",
+      "mechanics": "Staves, bows, ritual furnishings. Weapons ignore resistance to B/P damage from plants or fey.",
+      "notes": "Harvesting without druidic permission is a grave crime.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "rarity": "uncommon",
+    "unit": "plank",
+    "unit_price_gp": 200
+  },
+  {
+    "_id": "a536154a7b3ae151a82458a7",
+    "name": "Shadowglass",
+    "slug": "shadowglass",
+    "regions": [
+      "e2610dc9754b54ddfcf610a6",
+      "e23ec5f768a69bb89b1fe69b"
+    ]
+  },
+  {
+    "_id": "a6939e7b87a4c90283f8090d",
+    "name": "Stariron",
+    "slug": "stariron",
+    "regions": [
+      "e2610dc9754b54ddfcf610a6",
+      "501f50049cc337d1c5f0442f",
+      "4e310c25113cb93232ca64f2",
+      "e23ec5f768a69bb89b1fe69b"
+    ]
+  },
+  {
+    "_id": "69cb5ca2976019404ef58623",
+    "name": "Riversteel",
+    "slug": "riversteel",
+    "regions": [
+      "cb7366f2c6dbf8d2a09cefbe",
+      "4e310c25113cb93232ca64f2"
+    ]
+  },
+  {
+    "_id": "21b7662f7f68fc659357e0b8",
+    "name": "Thrymhold Steel",
+    "slug": "thrymhold-steel",
+    "regions": [
+      "dfbdfbf5d2ed832b28699855"
+    ]
+  },
+  {
+    "_id": "a65b9542f7f6de7c0b17b877",
+    "name": "Wyvernbone",
+    "slug": "wyvernbone",
+    "regions": [
+      "cb7366f2c6dbf8d2a09cefbe",
+      "4e310c25113cb93232ca64f2"
+    ]
+  },
+  {
+    "_id": "06ba4fdd102faa333bd65656",
+    "name": "Moonwoven Silk",
+    "slug": "moonwoven-silk",
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "blackmarket": "rare",
+    "metadata": {
+      "description": "Feather-light yet stronger than steel; sacred to the Anari and resistant to rot and moisture.",
+      "mechanics": "Garments, ropes, sails, cloaks. Items are immune to rot and shadow corruption.",
+      "notes": "Wearing it is considered an offering to Aranw\u00eb, the Loom-Mother.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "rarity": "uncommon",
+    "unit": "bolt",
+    "unit_price_gp": 500
+  },
+  {
+    "_id": "4640ab0ee100d13e9c5488d6",
+    "name": "Auric Filigree",
+    "slug": "auric-filigree",
+    "regions": [
+      "cb7366f2c6dbf8d2a09cefbe",
+      "0c8f42a8be0a24234573fcfa",
+      "4e310c25113cb93232ca64f2",
+      "cd398245e63621f95d140902"
+    ]
+  },
+  {
+    "_id": "e27ca1a55a64449c16a10818",
+    "name": "Leyline Amber",
+    "slug": "leyline-amber",
+    "regions": [
+      "0c8f42a8be0a24234573fcfa",
+      "4e310c25113cb93232ca64f2",
+      "cd398245e63621f95d140902"
+    ]
+  },
+  {
+    "_id": "68da8d5ba44347b9c30d1039",
+    "slug": "forgefire-steel",
+    "blackmarket": "rare",
+    "metadata": {
+      "description": "Dwarven alloy folded in magma and rune-hardened.",
+      "mechanics": "Weapons deal +1 damage and ignore resistance to nonmagical metal; armor grants resistance to fire or cold (smith\u2019s choice).",
+      "notes": "Possession outside dwarven lands may be treated as theft.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Forgefire Steel",
+    "rarity": "rare",
+    "regions": [
+      "3963c2792a054ac76f814d74",
+      "dfbdfbf5d2ed832b28699855"
+    ],
+    "unit": "ingot",
+    "unit_price_gp": 1000
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d103a",
+    "slug": "stormglass",
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Fragile glass fused from lightning and sand.",
+      "mechanics": "Charms, arrowheads, jewelry. No special damage; believed to ward lightning.",
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Stormglass",
+    "rarity": "common",
+    "regions": [
+      "293df315e54bffc7b5d30388"
+    ],
+    "unit": "shard",
+    "unit_price_gp": 25
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d103b",
+    "slug": "veilstone",
+    "blackmarket": null,
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Veilstone",
+    "rarity": null,
+    "regions": [
+      "e2610dc9754b54ddfcf610a6"
+    ],
+    "unit": null,
+    "unit_price_gp": null
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d103c",
+    "slug": "obsidian",
+    "blackmarket": null,
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Obsidian",
+    "rarity": null,
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "unit": null,
+    "unit_price_gp": null
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d103e",
+    "slug": "sundershard-crystal",
+    "blackmarket": null,
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Sundershard Crystal",
+    "rarity": null,
+    "regions": [
+      "293df315e54bffc7b5d30388"
+    ],
+    "unit": null,
+    "unit_price_gp": null
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d103f",
+    "slug": "painted-spider-silk",
+    "blackmarket": null,
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Painted Spider Silk",
+    "rarity": null,
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "unit": null,
+    "unit_price_gp": null
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d1040",
+    "slug": "aetherite",
+    "blackmarket": "yes",
+    "metadata": {
+      "description": "Glowing crystals storing latent planar energy.",
+      "mechanics": "Power sources for floating structures and foci. Advantage on spell attacks to control flight/air currents.",
+      "notes": "Volatile when fractured\u2014may release a gust of wind effect.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Aetherite",
+    "rarity": "rare",
+    "regions": [
+      "e2610dc9754b54ddfcf610a6"
+    ],
+    "unit": "crystal",
+    "unit_price_gp": 1500
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d1041",
+    "slug": "elven-craftwork",
+    "blackmarket": null,
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Elven Craftwork",
+    "rarity": null,
+    "regions": [
+      "501f50049cc337d1c5f0442f"
+    ],
+    "unit": null,
+    "unit_price_gp": null
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d1042",
+    "slug": "enchanted-veilstone",
+    "blackmarket": "sometimes",
+    "metadata": {
+      "description": "Pale stone infused with minor enchantments; holds spells well.",
+      "mechanics": "Jewelry, hilts, runic carvings. Items gain advantage on Arcana checks to identify them.",
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Enchanted Veilstone",
+    "rarity": "uncommon",
+    "regions": [
+      "e2610dc9754b54ddfcf610a6"
+    ],
+    "unit": "stone",
+    "unit_price_gp": 250
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d1043",
+    "slug": "sundershard",
+    "blackmarket": "yes",
+    "metadata": {
+      "description": "Jagged storm-crystals formed during the Sundering.",
+      "mechanics": "Weapon or focus inlays. 1/day a weapon can deal +1d6 lightning; on nat 1, wielder takes 1d4 lightning.",
+      "notes": "Dangerous to handle legally; regulated.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Sundershard",
+    "rarity": "rare",
+    "regions": [
+      "293df315e54bffc7b5d30388"
+    ],
+    "unit": "shard",
+    "unit_price_gp": 2000
+  },
+  {
+    "_id": "68da8d5ca44347b9c30d1045",
+    "slug": "obsidian-volcanic-gems",
+    "blackmarket": "sometimes",
+    "metadata": {
+      "description": "Black volcanic glass and fire-gems near lava vents.",
+      "mechanics": "Obsidian inlays/arrowheads deal +1 fire damage (fragile). Volcanic gems serve as arcane foci.",
+      "notes": "Prone to shattering.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Obsidian & Volcanic Gems",
+    "rarity": "uncommon",
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "unit": "gem",
+    "unit_price_gp": null
+  },
+  {
+    "_id": "68da8deda44347b9c30d105b",
+    "slug": "grung-venoms",
+    "blackmarket": "yes",
+    "metadata": {
+      "description": "Distilled Grung secretions sold in tiny vials; smuggled exclusively.",
+      "mechanics": "Weapon coating; effects vary by name.",
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    },
+    "name": "Grung Venoms",
+    "rarity": "uncommon",
+    "regions": [
+      "cd398245e63621f95d140902"
+    ],
+    "unit": "vial",
+    "unit_price_gp": null,
+    "variants": [
+      {
+        "name": "Green (Warrior)",
+        "price_gp": 200,
+        "effect": "Paralysis (DC 12 Con, 1 round)"
+      },
+      {
+        "name": "Blue (Artisan)",
+        "price_gp": 250,
+        "effect": "Hallucinogenic (disadvantage on Int/Wis checks)"
+      },
+      {
+        "name": "Purple (Supervisor)",
+        "price_gp": 300,
+        "effect": "Charmed for 1 minute (Wis save resists)"
+      },
+      {
+        "name": "Red (Hunter)",
+        "price_gp": 500,
+        "effect": "+1d6 poison; risk of lingering sickness"
+      },
+      {
+        "name": "Orange (Elite)",
+        "price_gp": 750,
+        "effect": "Con save or fall unconscious"
+      },
+      {
+        "name": "Gold (Ruler)",
+        "price_gp": 1500,
+        "effect": "Dominate Person for 1 round on failed save"
+      }
+    ]
+  },
+  {
+    "name": "Common Steel",
+    "slug": "common-steel",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Ubiquitous steel used for blades, mail, tools, and fittings.",
+      "mechanics": "Generic steel suitable for mundane items; no special properties.",
+      "notes": "Often mixed with small amounts of carbon; quality varies by smith.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Iron",
+    "slug": "common-iron",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Raw or wrought iron for simple heads, nails, and fittings.",
+      "mechanics": "Cheaper than steel and more prone to rust; no special properties.",
+      "notes": "Used for spikes, pitons, and heads of basic implements.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Wood",
+    "slug": "common-wood",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Generic timber for hafts, bows, poles, and frames.",
+      "mechanics": "No special properties; common species vary by region.",
+      "notes": "Seasoned to reduce warping. Used across most mundane gear.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Leather",
+    "slug": "common-leather",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Tanned leather for armor straps, packs, belts, boots.",
+      "mechanics": "Flexible, durable; no special properties.",
+      "notes": "Sourced from common herd animals.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Hide",
+    "slug": "common-hide",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Thick animal hide used for basic armor.",
+      "mechanics": "Heavier, stiffer; no special properties.",
+      "notes": "Often layered or boiled for rigidity.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Cloth",
+    "slug": "common-cloth",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Woven cloth for clothing, sacks, blankets.",
+      "mechanics": "No special properties.",
+      "notes": "Wool, linen, or cotton depending on locale.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Hemp",
+    "slug": "common-hemp",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Plant fiber used for rope, bowstrings, and cordage.",
+      "mechanics": "Strong, coarse fiber; no special properties.",
+      "notes": "Preferred for ropes and rigging.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Stone",
+    "slug": "common-stone",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Carved stone for sling bullets, weights, and ballast.",
+      "mechanics": "Dense and cheap; no special properties.",
+      "notes": "Varies by quarry.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Glass",
+    "slug": "common-glass",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Blown glass used for vials, flasks, and bottles.",
+      "mechanics": "Brittle; no special properties.",
+      "notes": "Clear or greenish common glass.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Oil",
+    "slug": "common-oil",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Lamp oil and maintenance oils.",
+      "mechanics": "Combustible fluid; no special properties.",
+      "notes": "Animal or plant derived.",
+      "source": "SRD Backfill v1"
+    }
+  },
+  {
+    "name": "Common Paper",
+    "slug": "common-paper",
+    "rarity": "common",
+    "regions": [],
+    "unit": null,
+    "unit_weight_lb": null,
+    "unit_price_gp": null,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Paper and parchment for books, notes, maps.",
+      "mechanics": "No special properties.",
+      "notes": "Pulp or vellum substitutes.",
+      "source": "SRD Backfill v1"
+    }
+  }
+]

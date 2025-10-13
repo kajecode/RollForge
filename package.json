@@ -1,0 +1,45 @@
+{
+  "name": "rollforge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "Karlan Talkington <kbtalkin@gmail.com>",
+  "license": "ISC",
+  "packageManager": "pnpm@10.11.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "start": "node --enable-source-maps dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "register": "tsx src/commands/registerCommands.ts",
+    "ingest": "tsx src/ingest/ingest.ts ./corpus twilight-veil",
+    "ingest:prune": "tsx src/ingest/ingest.ts ./corpus twilight-veil --prune",
+    "ingest:srd": "tsx src/ingest/load_srd.ts",
+    "import:prices": "tsx src/ingest/importPrices.ts ./data/5e-SRD-Items.csv",
+    "dump": "tsx src/dumpToJson.ts"
+  },
+  "dependencies": {
+    "@dice-roller/rpg-dice-roller": "^5.5.1",
+    "discord.js": "14.22.1",
+    "dotenv": "17.2.2",
+    "fast-csv": "^5.0.5",
+    "fast-glob": "^3.3.3",
+    "gray-matter": "^4.0.3",
+    "mongodb": "6.20.0",
+    "mongoose": "8.16.2",
+    "openai": "5.22.1",
+    "winston": "3.17.0",
+    "winston-transport": "^4.9.0",
+    "zod": "4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "24.5.2",
+    "ts-node": "10.9.1",
+    "tsconfig-paths": "4.2.0",
+    "tsconfig-paths-webpack-plugin": "4.2.0",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2"
+  }
+}

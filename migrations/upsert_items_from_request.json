@@ -1,0 +1,274 @@
+[
+  {
+    "name": "Verdantwood Staff",
+    "slug": "verdantwood-staff",
+    "type": "weapon (staff)",
+    "rarity": "common",
+    "isMagic": true,
+    "regions": [
+      "cd398245e63621f95d140902"
+    ],
+    "materials_slugs": [
+      "verdantwood"
+    ],
+    "materials": [],
+    "weight_lb": 4,
+    "basePriceGP": 50,
+    "blackmarket": "no",
+    "notes": null
+  },
+  {
+    "name": "Moonwoven Sash",
+    "slug": "moonwoven-sash",
+    "type": "wondrous item",
+    "rarity": "common",
+    "isMagic": true,
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "materials_slugs": [
+      "moonwoven-silk"
+    ],
+    "materials": [],
+    "weight_lb": 1,
+    "basePriceGP": 75,
+    "blackmarket": "no",
+    "notes": null
+  },
+  {
+    "name": "Forgefire Dagger",
+    "slug": "forgefire-dagger",
+    "type": "weapon (dagger)",
+    "rarity": "common",
+    "isMagic": true,
+    "regions": [
+      "3963c2792a054ac76f814d74",
+      "dfbdfbf5d2ed832b28699855"
+    ],
+    "materials_slugs": [
+      "forgefire-steel"
+    ],
+    "materials": [],
+    "weight_lb": 1,
+    "basePriceGP": 100,
+    "blackmarket": "no",
+    "notes": null
+  },
+  {
+    "name": "Stormglass Amulet",
+    "slug": "stormglass-amulet",
+    "type": "wondrous item",
+    "rarity": "common",
+    "isMagic": true,
+    "regions": [
+      "293df315e54bffc7b5d30388"
+    ],
+    "materials_slugs": [
+      "stormglass"
+    ],
+    "materials": [],
+    "weight_lb": null,
+    "basePriceGP": 50,
+    "blackmarket": "rarely",
+    "notes": null
+  },
+  {
+    "name": "Ranger\u2019s Boots",
+    "slug": "rangers-boots",
+    "type": "wondrous item",
+    "rarity": "common",
+    "isMagic": true,
+    "regions": [
+      "501f50049cc337d1c5f0442f"
+    ],
+    "materials_slugs": [
+      "rangers-leather"
+    ],
+    "materials": [],
+    "weight_lb": 2,
+    "basePriceGP": 125,
+    "blackmarket": "no",
+    "notes": null
+  },
+  {
+    "name": "Veilstone Trinket",
+    "slug": "veilstone-trinket",
+    "type": "wondrous item",
+    "rarity": "uncommon",
+    "isMagic": true,
+    "regions": [
+      "e2610dc9754b54ddfcf610a6"
+    ],
+    "materials_slugs": [
+      "veilstone"
+    ],
+    "materials": [],
+    "weight_lb": null,
+    "basePriceGP": 150,
+    "blackmarket": "no",
+    "notes": null
+  },
+  {
+    "name": "Obsidian Arrowheads (Bundle of 5)",
+    "slug": "obsidian-arrowheads-bundle-of-5",
+    "type": "ammunition",
+    "rarity": "uncommon",
+    "isMagic": true,
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "materials_slugs": [
+      "obsidian"
+    ],
+    "materials": [],
+    "weight_lb": 1,
+    "basePriceGP": 75,
+    "blackmarket": "sometimes",
+    "notes": null
+  },
+  {
+    "name": "Grung Venom Vial (Green Caste)",
+    "slug": "grung-venom-vial-green-caste",
+    "type": "poison",
+    "rarity": "uncommon",
+    "isMagic": true,
+    "regions": [
+      "cd398245e63621f95d140902"
+    ],
+    "materials_slugs": [
+      "grung-venom"
+    ],
+    "materials": [],
+    "weight_lb": null,
+    "basePriceGP": 200,
+    "blackmarket": "yes",
+    "notes": null
+  },
+  {
+    "name": "Highland Oath-Band",
+    "slug": "highland-oath-band",
+    "type": "ring",
+    "rarity": "uncommon",
+    "isMagic": true,
+    "regions": [
+      "3963c2792a054ac76f814d74"
+    ],
+    "materials_slugs": [
+      "forgefire-steel"
+    ],
+    "materials": [],
+    "weight_lb": null,
+    "basePriceGP": 250,
+    "blackmarket": "no",
+    "notes": null
+  },
+  {
+    "name": "Silken Rope of the Loom-Mother",
+    "slug": "silken-rope-of-the-loom-mother",
+    "type": "wondrous item",
+    "rarity": "uncommon",
+    "isMagic": true,
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "materials_slugs": [
+      "moonwoven-silk"
+    ],
+    "materials": [],
+    "weight_lb": 2,
+    "basePriceGP": 200,
+    "blackmarket": "no",
+    "notes": null
+  },
+  {
+    "name": "Sundershard Blade",
+    "slug": "sundershard-blade",
+    "type": "weapon (longsword)",
+    "rarity": "rare",
+    "isMagic": true,
+    "regions": [
+      "293df315e54bffc7b5d30388"
+    ],
+    "materials_slugs": [
+      "sundershard-crystal"
+    ],
+    "materials": [],
+    "weight_lb": 3,
+    "basePriceGP": 2500,
+    "blackmarket": "yes",
+    "notes": null
+  },
+  {
+    "name": "Cloak of the Painted Spider",
+    "slug": "cloak-of-the-painted-spider",
+    "type": "wondrous item",
+    "rarity": "rare",
+    "isMagic": true,
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "materials_slugs": [
+      "painted-spider-silk"
+    ],
+    "materials": [],
+    "weight_lb": 3,
+    "basePriceGP": 3000,
+    "blackmarket": "rare",
+    "notes": null
+  },
+  {
+    "name": "Forgefire Breastplate",
+    "slug": "forgefire-breastplate",
+    "type": "armor (breastplate)",
+    "rarity": "rare",
+    "isMagic": true,
+    "regions": [
+      "dfbdfbf5d2ed832b28699855",
+      "3963c2792a054ac76f814d74"
+    ],
+    "materials_slugs": [
+      "forgefire-steel"
+    ],
+    "materials": [],
+    "weight_lb": 20,
+    "basePriceGP": 4000,
+    "blackmarket": "rarely",
+    "notes": null
+  },
+  {
+    "name": "Aetherite Lens",
+    "slug": "aetherite-lens",
+    "type": "wondrous item",
+    "rarity": "rare",
+    "isMagic": true,
+    "regions": [
+      "e2610dc9754b54ddfcf610a6"
+    ],
+    "materials_slugs": [
+      "aetherite"
+    ],
+    "materials": [],
+    "weight_lb": null,
+    "basePriceGP": 3500,
+    "blackmarket": "yes",
+    "notes": null
+  },
+  {
+    "name": "Elven Compass of the Wayward Path",
+    "slug": "elven-compass-of-the-wayward-path",
+    "type": "wondrous item",
+    "rarity": "unique",
+    "isMagic": true,
+    "regions": [
+      "501f50049cc337d1c5f0442f"
+    ],
+    "materials_slugs": [
+      "elven-craftwork"
+    ],
+    "materials": [],
+    "weight_lb": 1,
+    "basePriceGP": null,
+    "blackmarket": "yes",
+    "notes": null
+  }
+]

@@ -1,0 +1,427 @@
+[
+  {
+    "slug": "longsword",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "shortsword",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "dagger",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "greatsword",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "greataxe",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "longbow",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-hemp",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "shortbow",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-hemp",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "arrow-20",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "bolt-20",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "sling",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "sling-bullets-20",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-stone"
+    ]
+  },
+  {
+    "slug": "club",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "mace",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "quarterstaff",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "spear",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "shield",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "padded-armor",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-cloth"
+    ]
+  },
+  {
+    "slug": "leather-armor",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-leather"
+    ]
+  },
+  {
+    "slug": "studded-leather",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-leather"
+    ]
+  },
+  {
+    "slug": "hide-armor",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-hide"
+    ]
+  },
+  {
+    "slug": "chain-shirt",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "scale-mail",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "breastplate",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "half-plate",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "ring-mail",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "chain-mail",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "splint",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "plate",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "backpack",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "bedroll",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-cloth"
+    ]
+  },
+  {
+    "slug": "rations-1-day",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "waterskin",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "tinderbox",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-cloth"
+    ]
+  },
+  {
+    "slug": "grappling-hook",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-iron"
+    ]
+  },
+  {
+    "slug": "healers-kit",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "thieves-tools",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "herbalism-kit",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "alchemists-supplies",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "oil-1-flask",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-glass",
+      "common-oil"
+    ]
+  },
+  {
+    "slug": "torch",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "pony",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "saddlebags",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-cloth",
+      "common-leather"
+    ]
+  },
+  {
+    "slug": "cart",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "wagon",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "maul",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "crossbow-light",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-hemp",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "crossbow-hand",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-hemp",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "crossbow-heavy",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-hemp",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "warhammer",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-iron",
+      "common-steel",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "arrows-20",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "bolts-20",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel",
+      "common-wood"
+    ]
+  },
+  {
+    "slug": "splint-armor",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "plate-armor",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  },
+  {
+    "slug": "rope-hempen-50-ft",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-hemp"
+    ]
+  },
+  {
+    "slug": "lantern-hooded",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "lantern-bullseye",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "horse-draft",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "horse-riding",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "saddle-riding",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-leather"
+    ]
+  },
+  {
+    "slug": "boat-rowed",
+    "set_rarity": "common",
+    "add_materials_slugs": []
+  },
+  {
+    "slug": "potion-of-healing",
+    "set_rarity": "common",
+    "add_materials_slugs": [
+      "common-glass"
+    ]
+  },
+  {
+    "slug": "bag-of-holding",
+    "set_rarity": "uncommon",
+    "add_materials_slugs": [
+      "common-cloth"
+    ]
+  },
+  {
+    "slug": "1-longsword",
+    "set_rarity": "uncommon",
+    "add_materials_slugs": [
+      "common-steel"
+    ]
+  }
+]

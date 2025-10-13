@@ -1,0 +1,61 @@
+name,category,rarity,is_magic,base_price_gp,source,tags,notes,regions,materials,blackmarket_only,availability_boost
+Longsword,weapon,none,False,15.0,SRD,"martial,melee",—,,,False,0
+Shortsword,weapon,none,False,10.0,SRD,"martial,melee",—,,,False,0
+Dagger,weapon,none,False,2.0,SRD,"simple,light,thrown",—,,,False,0
+Greatsword,weapon,none,False,50.0,SRD,"martial,heavy,two-handed",—,,,False,0
+Greataxe,weapon,none,False,30.0,SRD,"martial,heavy,two-handed",—,,,False,0
+Maul,weapon,none,False,10.0,SRD,"martial,heavy,two-handed",—,,,False,0
+Longbow,weapon,none,False,50.0,SRD,"martial,ranged,ammunition",—,,,False,0
+Shortbow,weapon,none,False,25.0,SRD,"simple,ranged,ammunition",—,,,False,0
+"Crossbow, light",weapon,none,False,25.0,SRD,"simple,ranged,ammunition,loading",—,,,False,0
+"Crossbow, hand",weapon,none,False,75.0,SRD,"martial,ranged,ammunition,light,loading",—,,,False,0
+"Crossbow, heavy",weapon,none,False,50.0,SRD,"martial,ranged,ammunition,heavy,loading,two-handed",—,,,False,0
+Sling,weapon,none,False,0.1,SRD,"simple,ranged,ammunition",—,,,False,0
+Club,weapon,none,False,0.1,SRD,"simple,melee,light",—,,,False,0
+Mace,weapon,none,False,5.0,SRD,"simple,melee",—,,,False,0
+Quarterstaff,weapon,none,False,0.2,SRD,"simple,melee,versatile",—,,,False,0
+Spear,weapon,none,False,1.0,SRD,"simple,melee,thrown,versatile",—,,,False,0
+Warhammer,weapon,none,False,15.0,SRD,"martial,melee,versatile",—,,,False,0
+Arrows (20),ammo,none,False,1.0,SRD,ammunition,—,,,False,0
+Bolts (20),ammo,none,False,1.0,SRD,ammunition,—,,,False,0
+Sling Bullets (20),ammo,none,False,0.04,SRD,ammunition,—,,,False,0
+Shield,armor,none,False,10.0,SRD,+2 AC,—,,,False,0
+Padded Armor,armor,none,False,5.0,SRD,light,—,,,False,0
+Leather Armor,armor,none,False,10.0,SRD,light,—,,,False,0
+Studded Leather,armor,none,False,45.0,SRD,light,—,,,False,0
+Hide Armor,armor,none,False,10.0,SRD,medium,—,,,False,0
+Chain Shirt,armor,none,False,50.0,SRD,medium,—,,,False,0
+Scale Mail,armor,none,False,50.0,SRD,medium,—,,,False,0
+Breastplate,armor,none,False,400.0,SRD,medium,—,,,False,0
+Half Plate,armor,none,False,750.0,SRD,medium,—,,,False,0
+Ring Mail,armor,none,False,30.0,SRD,heavy,—,,,False,0
+Chain Mail,armor,none,False,75.0,SRD,heavy,—,,,False,0
+Splint Armor,armor,none,False,200.0,SRD,heavy,—,,,False,0
+Plate Armor,armor,none,False,1500.0,SRD,heavy,—,,,False,0
+Backpack,gear,none,False,2.0,SRD,container,—,,,False,0
+Bedroll,gear,none,False,1.0,SRD,camping,—,,,False,0
+Rations (1 day),gear,none,False,0.5,SRD,food,—,,,False,0
+Waterskin,gear,none,False,0.2,SRD,container,—,,,False,0
+Tinderbox,gear,none,False,0.5,SRD,utility,—,,,False,0
+"Rope, hempen (50 ft)",gear,none,False,1.0,SRD,utility,—,,,False,0
+Grappling Hook,gear,none,False,2.0,SRD,"utility,climb",—,,,False,0
+Healer's Kit,gear,none,False,5.0,SRD,medical,—,,,False,0
+Thieves' Tools,tools,none,False,25.0,SRD,"tools,rogue",—,,,False,0
+Herbalism Kit,tools,none,False,5.0,SRD,"tools,craft",—,,,False,0
+Alchemist's Supplies,tools,none,False,50.0,SRD,"tools,craft",—,,,False,0
+"Lantern, hooded",gear,none,False,5.0,SRD,light,—,,,False,0
+"Lantern, bullseye",gear,none,False,10.0,SRD,light,—,,,False,0
+Oil (1 flask),gear,none,False,0.1,SRD,consumable,—,,,False,0
+Torch,gear,none,False,0.01,SRD,light,—,,,False,0
+"Horse, draft",mount,none,False,50.0,SRD,"mount,beast",—,,,False,0
+"Horse, riding",mount,none,False,75.0,SRD,"mount,beast",—,,,False,0
+Pony,mount,none,False,30.0,SRD,"mount,beast",—,,,False,0
+"Saddle, riding",gear,none,False,10.0,SRD,mount,—,,,False,0
+Saddlebags,gear,none,False,4.0,SRD,mount,—,,,False,0
+Cart,vehicle,none,False,15.0,SRD,"vehicle,land",—,,,False,0
+Wagon,vehicle,none,False,35.0,SRD,"vehicle,land",—,,,False,0
+"Boat, rowed",vehicle,none,False,50.0,SRD,"vehicle,water",—,,,False,0
+Potion of Healing,potion,common,True,,SRD,"consumable,healing",Standard healing potion,,,False,0
+Bag of Holding,wondrous,uncommon,True,,SRD,"container,extra-dimensional",—,,,False,0
+Boots of Elvenkind,wondrous,uncommon,True,,SRD,"stealth,footwear,attunement",—,,,False,0
++1 Longsword,weapon,uncommon,True,,SRD,"weapon,bonus",Magical longsword granting +1 to attack and damage,,,False,0

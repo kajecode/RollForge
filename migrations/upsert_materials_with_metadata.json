@@ -1,0 +1,305 @@
+[
+  {
+    "_id": "846dfff19d5ac2027e2cbc2e",
+    "name": "Verdantwood",
+    "slug": "verdantwood",
+    "regions": [
+      "cd398245e63621f95d140902"
+    ],
+    "rarity": "uncommon",
+    "unit": "plank",
+    "unit_weight_lb": 10,
+    "unit_price_gp": 200,
+    "blackmarket": "yes",
+    "metadata": {
+      "description": "Ley-grown timber that glows faintly green when cut.",
+      "mechanics": "Staves, bows, ritual furnishings. Weapons ignore resistance to B/P damage from plants or fey.",
+      "notes": "Harvesting without druidic permission is a grave crime.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": "06ba4fdd102faa333bd65656",
+    "name": "Moonwoven Silk",
+    "slug": "moonwoven-silk",
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "rarity": "uncommon",
+    "unit": "bolt",
+    "unit_weight_lb": 2,
+    "unit_price_gp": 500,
+    "blackmarket": "rare",
+    "metadata": {
+      "description": "Feather-light yet stronger than steel; sacred to the Anari and resistant to rot and moisture.",
+      "mechanics": "Garments, ropes, sails, cloaks. Items are immune to rot and shadow corruption.",
+      "notes": "Wearing it is considered an offering to Aranw\u00eb, the Loom-Mother.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Forgefire Steel",
+    "slug": "forgefire-steel",
+    "regions": [
+      "3963c2792a054ac76f814d74",
+      "dfbdfbf5d2ed832b28699855"
+    ],
+    "rarity": "rare",
+    "unit": "ingot",
+    "unit_weight_lb": 5,
+    "unit_price_gp": 1000,
+    "blackmarket": "rare",
+    "metadata": {
+      "description": "Dwarven alloy folded in magma and rune-hardened.",
+      "mechanics": "Weapons deal +1 damage and ignore resistance to nonmagical metal; armor grants resistance to fire or cold (smith\u2019s choice).",
+      "notes": "Possession outside dwarven lands may be treated as theft.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Stormglass",
+    "slug": "stormglass",
+    "regions": [
+      "293df315e54bffc7b5d30388"
+    ],
+    "rarity": "common",
+    "unit": "shard",
+    "unit_weight_lb": 0.5,
+    "unit_price_gp": 25,
+    "blackmarket": "no",
+    "metadata": {
+      "description": "Fragile glass fused from lightning and sand.",
+      "mechanics": "Charms, arrowheads, jewelry. No special damage; believed to ward lightning.",
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Ranger's Leather",
+    "slug": "rangers-leather",
+    "regions": [
+      "501f50049cc337d1c5f0442f"
+    ],
+    "rarity": "uncommon",
+    "unit": "cured hide",
+    "unit_weight_lb": 6,
+    "unit_price_gp": 150,
+    "blackmarket": "rare",
+    "metadata": {
+      "description": "Supple hides cured in ley-infused oils, used by Rangers of Eryndor.",
+      "mechanics": "Boots, cloaks, armor: items grant +2 to Stealth checks in wilderness terrain.",
+      "notes": "Legally restricted to Ranger orders.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Veilstone",
+    "slug": "veilstone",
+    "regions": [
+      "e2610dc9754b54ddfcf610a6"
+    ],
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Obsidian",
+    "slug": "obsidian",
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Grung Venom",
+    "slug": "grung-venom",
+    "regions": [
+      "cd398245e63621f95d140902"
+    ],
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Sundershard Crystal",
+    "slug": "sundershard-crystal",
+    "regions": [
+      "293df315e54bffc7b5d30388"
+    ],
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Painted Spider Silk",
+    "slug": "painted-spider-silk",
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Aetherite",
+    "slug": "aetherite",
+    "regions": [
+      "e2610dc9754b54ddfcf610a6"
+    ],
+    "rarity": "rare",
+    "unit": "crystal",
+    "unit_weight_lb": 2,
+    "unit_price_gp": 1500,
+    "blackmarket": "yes",
+    "metadata": {
+      "description": "Glowing crystals storing latent planar energy.",
+      "mechanics": "Power sources for floating structures and foci. Advantage on spell attacks to control flight/air currents.",
+      "notes": "Volatile when fractured\u2014may release a gust of wind effect.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "_id": null,
+    "name": "Elven Craftwork",
+    "slug": "elven-craftwork",
+    "regions": [
+      "501f50049cc337d1c5f0442f"
+    ],
+    "metadata": {
+      "description": null,
+      "mechanics": null,
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "name": "Enchanted Veilstone",
+    "slug": "enchanted-veilstone",
+    "rarity": "uncommon",
+    "regions": [
+      "e2610dc9754b54ddfcf610a6"
+    ],
+    "unit": "stone",
+    "unit_weight_lb": 3,
+    "unit_price_gp": 250,
+    "blackmarket": "sometimes",
+    "metadata": {
+      "description": "Pale stone infused with minor enchantments; holds spells well.",
+      "mechanics": "Jewelry, hilts, runic carvings. Items gain advantage on Arcana checks to identify them.",
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "name": "Sundershard",
+    "slug": "sundershard",
+    "rarity": "rare",
+    "regions": [
+      "293df315e54bffc7b5d30388"
+    ],
+    "unit": "shard",
+    "unit_weight_lb": 1,
+    "unit_price_gp": 2000,
+    "blackmarket": "yes",
+    "metadata": {
+      "description": "Jagged storm-crystals formed during the Sundering.",
+      "mechanics": "Weapon or focus inlays. 1/day a weapon can deal +1d6 lightning; on nat 1, wielder takes 1d4 lightning.",
+      "notes": "Dangerous to handle legally; regulated.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "name": "Grung Venoms",
+    "slug": "grung-venoms",
+    "rarity": "uncommon",
+    "regions": [
+      "cd398245e63621f95d140902"
+    ],
+    "unit": "vial",
+    "unit_weight_lb": 0,
+    "unit_price_gp": null,
+    "blackmarket": "yes",
+    "variants": [
+      {
+        "caste": "Green (Warrior)",
+        "price_gp": 200,
+        "effect": "Paralysis (DC 12 Con, 1 round)"
+      },
+      {
+        "caste": "Blue (Artisan)",
+        "price_gp": 250,
+        "effect": "Hallucinogenic (disadvantage on Int/Wis checks)"
+      },
+      {
+        "caste": "Purple (Supervisor)",
+        "price_gp": 300,
+        "effect": "Charmed for 1 minute (Wis save resists)"
+      },
+      {
+        "caste": "Red (Hunter)",
+        "price_gp": 500,
+        "effect": "+1d6 poison; risk of lingering sickness"
+      },
+      {
+        "caste": "Orange (Elite)",
+        "price_gp": 750,
+        "effect": "Con save or fall unconscious"
+      },
+      {
+        "caste": "Gold (Ruler)",
+        "price_gp": 1500,
+        "effect": "Dominate Person for 1 round on failed save"
+      }
+    ],
+    "metadata": {
+      "description": "Distilled Grung secretions sold in tiny vials; smuggled exclusively.",
+      "mechanics": "Weapon coating; effects vary by caste.",
+      "notes": null,
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  },
+  {
+    "name": "Obsidian & Volcanic Gems",
+    "slug": "obsidian-volcanic-gems",
+    "rarity": "uncommon",
+    "regions": [
+      "b1450e694194d491334f9edc"
+    ],
+    "unit": "gem",
+    "unit_weight_lb": 0.5,
+    "unit_price_gp": null,
+    "blackmarket": "sometimes",
+    "metadata": {
+      "description": "Black volcanic glass and fire-gems near lava vents.",
+      "mechanics": "Obsidian inlays/arrowheads deal +1 fire damage (fragile). Volcanic gems serve as arcane foci.",
+      "notes": "Prone to shattering.",
+      "source": "Twilight Veil \u2014 Special Materials v1"
+    }
+  }
+]
