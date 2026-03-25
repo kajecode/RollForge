@@ -1,4 +1,6 @@
 import { Client, GatewayIntentBits, Interaction } from "discord.js";
+import { handleAutocomplete } from "@/commands/autocomplete";
+import { handleFeedback } from "@/commands/handleFeedback";
 import { 
   env,
   connectMongo,
@@ -12,6 +14,7 @@ import shop from "@/commands/shop";
 import price from "@/commands/price";
 import shops from "@/commands/shops";
 import guildconfig from "@/commands/guildconfig";
+import session from "@/commands/session";
 import { EPHEMERAL_FLAGS, EPHEMERAL_REPLY } from "@/util";
 import logger, { initLogger } from "@/services/logger";
 
@@ -25,6 +28,16 @@ client.once("clientReady", async () => {
 });
 
 client.on("interactionCreate", async (interaction: Interaction) => {
+  if (interaction.isAutocomplete()) {
+    await handleAutocomplete(interaction).catch(() => {});
+    return;
+  }
+  if (interaction.isButton()) {
+    if (interaction.customId.startsWith("rule_fb:")) {
+      await handleFeedback(interaction).catch(() => {});
+    }
+    return;
+  }
   if (!interaction.isChatInputCommand()) return;
   try {
     switch (interaction.commandName) {
@@ -36,6 +49,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
       case "shop": await shop(interaction); break;
       case "price": await price(interaction); break;      
       case "shops": await shops(interaction); break;
+      case "session": await session(interaction); break;
       default: await interaction.reply({ ...EPHEMERAL_REPLY, content: "Unknown command." });
     }
   } catch (err: any) {

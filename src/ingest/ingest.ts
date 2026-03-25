@@ -20,6 +20,8 @@ type IngestOpts = {
 
 type DocumentLean = DocumentDoc & { _id: any };
 
+const DEFAULT_CHUNK_SIZE = 1200;
+
 function sha256(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
@@ -78,8 +80,9 @@ async function upsertMarkdown(absPath: string, relPath: string, opts: IngestOpts
     return;
   }
 
-  // Rebuild chunks
-  const parts = simpleChunk(content, 1200);
+  // Rebuild chunks — chunk_size frontmatter overrides the default
+  const chunkSize = typeof fm.chunk_size === "number" && fm.chunk_size > 0 ? fm.chunk_size : DEFAULT_CHUNK_SIZE;
+  const parts = simpleChunk(content, chunkSize);
   if (!parts.length) {
     await Chunk.deleteMany({ documentId: doc._id });
     console.log(`Cleared empty: ${title}`);
@@ -118,7 +121,7 @@ async function upsertPlain(absPath: string, relPath: string, opts: IngestOpts, s
     return;
   }
 
-  const parts = simpleChunk(text, 1200);
+  const parts = simpleChunk(text, DEFAULT_CHUNK_SIZE);
   const vectors = await batchEmbed(parts, 64);
 
   await Chunk.deleteMany({ documentId: doc._id });

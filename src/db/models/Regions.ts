@@ -50,7 +50,7 @@ function norm(s: string) {
     .replace(/^\/+|\/+$/g, "")
     .toLowerCase();
 }
-RegionSchema.pre("save", async function (next) {
+RegionSchema.pre("save", async function () {
   const doc = this as any;
 
   // keep slug stable (assume set by caller)
@@ -61,7 +61,7 @@ RegionSchema.pre("save", async function (next) {
       doc.path = norm(doc.slug);
     } else {
       const parent = await doc.constructor.findById(doc.parent).select("ancestors path slug").lean();
-      if (!parent) return next(new Error("Parent region not found"));
+      if (!parent) throw new Error("Parent region not found");
       doc.ancestors = [...(parent.ancestors || []), parent._id];
       const parentPath = parent.path || norm(parent.slug);
       doc.path = norm(`${parentPath}/${doc.slug}`);
@@ -74,10 +74,8 @@ RegionSchema.pre("save", async function (next) {
   // guard against cycles: parent cannot be in descendants
   if (doc.parent && doc._id) {
     const isCycle = doc.ancestors?.some((a: Types.ObjectId) => String(a) === String(doc._id));
-    if (isCycle) return next(new Error("Cycle detected in region hierarchy"));
+    if (isCycle) throw new Error("Cycle detected in region hierarchy");
   }
-
-  next();
 });
 
 export type RegionDoc = InferSchemaType<typeof RegionSchema> & { _id: Types.ObjectId };
