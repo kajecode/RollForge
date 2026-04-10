@@ -29,12 +29,18 @@ client.once("clientReady", async () => {
 
 client.on("interactionCreate", async (interaction: Interaction) => {
   if (interaction.isAutocomplete()) {
-    await handleAutocomplete(interaction).catch(() => {});
+    await handleAutocomplete(interaction).catch((err: any) => {
+      logger.warn(`autocomplete ${interaction.commandName} failed: ${err?.message}`, err);
+      // ensure the client does not hang waiting for suggestions
+      interaction.respond([]).catch(() => {});
+    });
     return;
   }
   if (interaction.isButton()) {
     if (interaction.customId.startsWith("rule_fb:")) {
-      await handleFeedback(interaction).catch(() => {});
+      await handleFeedback(interaction).catch((err: any) => {
+        logger.error(`feedback handler failed: ${err?.message}`, err);
+      });
     }
     return;
   }
@@ -47,17 +53,22 @@ client.on("interactionCreate", async (interaction: Interaction) => {
       case "npc": await npc(interaction); break;
       case "scene": await scene(interaction); break;
       case "shop": await shop(interaction); break;
-      case "price": await price(interaction); break;      
+      case "price": await price(interaction); break;
       case "shops": await shops(interaction); break;
       case "session": await session(interaction); break;
       default: await interaction.reply({ ...EPHEMERAL_REPLY, content: "Unknown command." });
     }
   } catch (err: any) {
     logger.error(`Command ${interaction.commandName} failed: ${err?.message}`, err);
+    const userMessage = { content: "⚠️ Something went wrong." };
     if (interaction.deferred || interaction.replied) {
-      await interaction.followUp({ flags: EPHEMERAL_FLAGS, content: "⚠️ Something went wrong." }).catch(()=>{});
+      await interaction.followUp({ flags: EPHEMERAL_FLAGS, ...userMessage }).catch((e: any) => {
+        logger.warn(`followUp error reply failed: ${e?.message}`, e);
+      });
     } else {
-      await interaction.reply({ ...EPHEMERAL_REPLY, content: "⚠️ Something went wrong." }).catch(()=>{});
+      await interaction.reply({ ...EPHEMERAL_REPLY, ...userMessage }).catch((e: any) => {
+        logger.warn(`reply error reply failed: ${e?.message}`, e);
+      });
     }
   }
 });
