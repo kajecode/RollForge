@@ -17,14 +17,18 @@ import guildconfig from "@/commands/guildconfig";
 import session from "@/commands/session";
 import { EPHEMERAL_FLAGS, EPHEMERAL_REPLY } from "@/util";
 import logger, { initLogger } from "@/services/logger";
+import { startHistoryPruner } from "@/core/conversationHistory";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once("clientReady", async () => { 
+client.once("clientReady", async () => {
   initLogger(client);                // attach Discord transport
   logger.info(`Logged in as ${client.user?.tag}`);
   await connectMongo();
   logger.info("Mongo connected");
+  // Periodically evict expired conversation-history entries and enforce
+  // the global cap, independent of request traffic. See issue #12.
+  startHistoryPruner();
 });
 
 client.on("interactionCreate", async (interaction: Interaction) => {
