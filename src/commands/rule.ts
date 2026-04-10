@@ -27,8 +27,16 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   const context = hits.map((h, i) => `[${i+1}] ${h.title ?? "Doc"} (score ${h.score.toFixed(2)}):\n${h.text}`).join("\n\n");
   const prompt = `Question: ${q}\n\nContext:\n${context}\n\nAnswer with steps if procedural. Include short source mentions like [Doc Title].`;
 
-  const answer = await complete(SYSTEM, prompt, history);
-  const parts = splitText(answer || "No answer.");
+  // Cap the LLM response before sending it to Discord. A runaway answer
+  // (e.g. the model ignores the concise instruction and dumps 50 KB) would
+  // otherwise produce a long cascade of followUp messages.
+  const MAX_ANSWER_CHARS = 4000;
+  const MAX_REPLY_PARTS = 3;
+  let answer = (await complete(SYSTEM, prompt, history)) || "No answer.";
+  if (answer.length > MAX_ANSWER_CHARS) {
+    answer = answer.slice(0, MAX_ANSWER_CHARS) + "\n\n*(truncated)*";
+  }
+  const parts = splitText(answer).slice(0, MAX_REPLY_PARTS);
 
   // Feedback buttons on the first (or only) reply
   const token = storePendingFeedback(q, hits.map(h => h._id.toString()), interaction.guildId!);
