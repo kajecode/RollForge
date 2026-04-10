@@ -114,29 +114,23 @@ describe("generateStock", () => {
     expect(result.picks[0].it.slug).toBe("cheap");
   });
 
-  it("documents current silent-fallback behavior when region slug does not resolve (issue #5)", async () => {
-    // TODO(#5): this should throw once the fix lands. For now the generator
-    // silently falls back to a global candidate pool with regionId=null.
+  it("throws when the region slug does not resolve (#5)", async () => {
     regionsFindOne.mockReturnValue(chainable(null));
     itemFind.mockReturnValue(chainable([mockItem()]));
 
-    const result = await generateStock({
-      type: "general",
-      marketLevel: "middle",
-      settlementSize: "village",
-      region: "nonexistent",
-    });
+    await expect(
+      generateStock({
+        type: "general",
+        marketLevel: "middle",
+        settlementSize: "village",
+        region: "nonexistent",
+      }),
+    ).rejects.toThrow(/Unknown region: nonexistent/);
 
-    expect(result.picks.length).toBeGreaterThan(0);
-    // Only one Item.find call (global branch), because `if (regionId)` skipped
-    // the local+global double fetch.
-    expect(itemFind).toHaveBeenCalledTimes(1);
-    // Pricing still receives the bad slug — also fixed by #5.
-    expect(resolvePriceGPMock).toHaveBeenCalledWith(
-      expect.anything(),
-      null,
-      expect.objectContaining({ region: "nonexistent" }),
-    );
+    // No item lookups or pricing calls should have occurred — the throw
+    // happens before the candidate fetch.
+    expect(itemFind).not.toHaveBeenCalled();
+    expect(resolvePriceGPMock).not.toHaveBeenCalled();
   });
 
   it("issues one resolvePriceGP call per candidate (N+1 observable by #9)", async () => {
