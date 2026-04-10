@@ -16,6 +16,7 @@
     "register": "tsx src/commands/registerCommands.ts",
     "ingest": "tsx src/ingest/ingest.ts ./corpus twilight-veil",
     "ingest:prune": "tsx src/ingest/ingest.ts ./corpus twilight-veil --prune",
+    "ingest:dry-run": "tsx src/ingest/ingest.ts ./corpus twilight-veil --dry-run",
     "ingest:srd": "tsx src/ingest/load_srd.ts",
     "import:prices": "tsx src/ingest/importPrices.ts ./data/5e-SRD-Items.csv",
     "dump": "tsx src/dumpToJson.ts",
