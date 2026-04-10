@@ -5,10 +5,18 @@ import Shop from "@/db/models/Shop";
 import Npc from "@/db/models/Npcs";
 import Session from "@/db/models/Sessions";
 
+// Cap the user-supplied autocomplete value length before feeding it into
+// any downstream regex. Belt-and-braces alongside the regex-escape fix
+// tracked in #13 — keeps pathological input from reaching $regex at all.
+const MAX_AUTOCOMPLETE_INPUT = 100;
+
 export async function handleAutocomplete(interaction: AutocompleteInteraction) {
   const { commandName } = interaction;
   const focused = interaction.options.getFocused(true);
-  const value = focused.value.toString();
+  // Safe coercion: focused.value can in principle be undefined/null in edge
+  // cases even though the type says string|number. String(null) would throw
+  // inside the regex below; this avoids that.
+  const value = String(focused.value ?? "").slice(0, MAX_AUTOCOMPLETE_INPUT);
   const guildId = interaction.guildId!;
 
   let choices: { name: string; value: string }[] = [];
