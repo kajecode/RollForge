@@ -6,6 +6,7 @@ import type { GuildConfigLean } from "./guild.js";
 vi.mock("@/db/models/Materials.js", () => ({
   default: {
     findOne: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(null) }),
+    find: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([]) }),
   },
 }));
 
@@ -14,7 +15,7 @@ vi.mock("@/db/models/GuildConfig.js", () => ({
   default: { findOne: vi.fn() },
 }));
 
-import { resolvePriceGP } from "./pricing.js";
+import { resolvePriceGP, buildMaterialCache } from "./pricing.js";
 import Materials from "@/db/models/Materials.js";
 
 // Helpers
@@ -200,6 +201,81 @@ describe("resolvePriceGP", () => {
         isBlackmarket: true,
       });
       expect(result).toBeCloseTo(100 * 1.25 * 1.25 * 1.75);
+    });
+  });
+
+  describe("materialCache (issue #9)", () => {
+    it("uses the cache and does NOT hit Materials.findOne when a hit is provided", async () => {
+      const cache = new Map<string, any>([
+        ["iron", { slug: "iron", baseMultiplier: 2 }],
+      ]);
+      const i = item({ basePriceGP: 100, material: "iron" });
+      const result = await resolvePriceGP(i, null, { materialCache: cache });
+      expect(result).toBe(200);
+      expect(Materials.findOne).not.toHaveBeenCalled();
+    });
+
+    it("uses the cache for explicit misses (pinned null) without hitting Mongo", async () => {
+      const cache = new Map<string, any>([["unobtainium", null]]);
+      const i = item({ basePriceGP: 100, material: "unobtainium" });
+      const result = await resolvePriceGP(i, null, { materialCache: cache });
+      expect(result).toBe(100);
+      expect(Materials.findOne).not.toHaveBeenCalled();
+    });
+
+    it("falls through to findOne for slugs not in the cache", async () => {
+      mockMaterial({ baseMultiplier: 3 });
+      const cache = new Map<string, any>();
+      const i = item({ basePriceGP: 100, material: "iron" });
+      const result = await resolvePriceGP(i, null, { materialCache: cache });
+      expect(result).toBe(300);
+      expect(Materials.findOne).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("buildMaterialCache (issue #9)", () => {
+    it("issues exactly one Materials.find call regardless of item count", async () => {
+      (Materials.find as ReturnType<typeof vi.fn>).mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          { slug: "iron", baseMultiplier: 1 },
+          { slug: "steel", baseMultiplier: 1.5 },
+        ]),
+      });
+
+      const items = [
+        { material: "iron" },
+        { material: "iron" },
+        { material: "steel" },
+        { material: null },
+        { materials: ["steel"] },
+      ];
+
+      const cache = await buildMaterialCache(items);
+      expect(Materials.find).toHaveBeenCalledTimes(1);
+      // find was called with the unique slug set
+      const args = (Materials.find as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(args.slug.$in.sort()).toEqual(["iron", "steel"]);
+      expect(cache.get("iron")).toEqual({ slug: "iron", baseMultiplier: 1 });
+      expect(cache.get("steel")).toEqual({ slug: "steel", baseMultiplier: 1.5 });
+    });
+
+    it("pins misses as null so repeated lookups short-circuit", async () => {
+      (Materials.find as ReturnType<typeof vi.fn>).mockReturnValue({
+        lean: vi.fn().mockResolvedValue([{ slug: "iron", baseMultiplier: 1 }]),
+      });
+
+      const cache = await buildMaterialCache([
+        { material: "iron" },
+        { material: "mythril" },
+      ]);
+      expect(cache.has("mythril")).toBe(true);
+      expect(cache.get("mythril")).toBeNull();
+    });
+
+    it("returns an empty map when no items have materials", async () => {
+      const cache = await buildMaterialCache([{ material: null }, {}]);
+      expect(cache.size).toBe(0);
+      expect(Materials.find).not.toHaveBeenCalled();
     });
   });
 });

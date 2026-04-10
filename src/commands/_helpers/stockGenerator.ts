@@ -2,7 +2,7 @@
 import Item, { ItemDoc } from "@/db/models/Items";
 import { SHOP_FILTERS, type ShopType } from "./shopPolicy";
 import { availabilityWeight, weightedSample, type MarketLevel } from "./weights";
-import { resolvePriceGP } from "@/services/pricing";
+import { resolvePriceGP, buildMaterialCache } from "@/services/pricing";
 import { GuildConfigLean } from "@/services/guild";
 import { Types } from "mongoose";
 import Regions, { RegionDoc } from "@/db/models/Regions";
@@ -101,12 +101,20 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
 
   const attempted = candidates.length;
 
-  // Price all candidates (so we can filter by per-item cap) and compute weights
-  // Note: resolvePriceGP can apply house multipliers, magic rarity ranges, etc.
+  // Price all candidates (so we can filter by per-item cap) and compute weights.
+  // Fix for #9: build a per-batch material cache with a single Mongo query,
+  // so resolvePriceGP doesn't trigger a Materials.findOne per candidate.
+  const materialCache = await buildMaterialCache(candidates as any[]);
   const priceCache = new Map<string, number | null>();
   const priced = await Promise.all(
     candidates.map(async (it) => {
-      const price = await resolvePriceGP(it, guildCfg, { region: regionSlug, regionId: regionId ?? undefined, isBlackmarket: blackmarket, marketLevel });
+      const price = await resolvePriceGP(it, guildCfg, {
+        region: regionSlug,
+        regionId: regionId ?? undefined,
+        isBlackmarket: blackmarket,
+        marketLevel,
+        materialCache,
+      });
       priceCache.set(it.slug, price);
       return { it, price };
     })

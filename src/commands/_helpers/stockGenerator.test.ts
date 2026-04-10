@@ -18,9 +18,11 @@ vi.mock("@/db/models/Items.js", () => ({
   },
 }));
 
-const resolvePriceGPMock = vi.fn();
+const resolvePriceGPMock = vi.fn((..._args: any[]) => Promise.resolve(10 as any));
+const buildMaterialCacheMock = vi.fn(async (..._args: any[]) => new Map());
 vi.mock("@/services/pricing.js", () => ({
   resolvePriceGP: (...args: any[]) => resolvePriceGPMock(...args),
+  buildMaterialCache: (...args: any[]) => buildMaterialCacheMock(...args),
 }));
 
 import { generateStock } from "./stockGenerator.js";
@@ -58,6 +60,8 @@ beforeEach(() => {
   itemFind.mockReturnValue(chainable([]));
   // default: every item is priced at 10gp
   resolvePriceGPMock.mockResolvedValue(10);
+  // default: empty material cache
+  buildMaterialCacheMock.mockResolvedValue(new Map());
 });
 
 describe("generateStock", () => {
@@ -139,13 +143,9 @@ describe("generateStock", () => {
     );
   });
 
-  it("issues one resolvePriceGP call per candidate (N+1 observable by #9)", async () => {
-    // This test will be the guardrail for issue #9: once the Materials cache
-    // is threaded through, we'll add a separate assertion that Materials.find
-    // is called at most once. For now we just pin the per-candidate call
-    // pattern so the refactor doesn't regress the eligible-count math.
+  it("calls buildMaterialCache exactly once per shop generation (#9)", async () => {
     const items = Array.from({ length: 5 }, (_, i) =>
-      mockItem({ slug: `item-${i}` }),
+      mockItem({ slug: `item-${i}`, material: "iron" }),
     );
     itemFind.mockReturnValue(chainable(items));
     resolvePriceGPMock.mockResolvedValue(5);
@@ -157,7 +157,16 @@ describe("generateStock", () => {
       desiredCount: 3,
     });
 
+    // One Materials.find call regardless of candidate count — this is the
+    // N+1 fix for issue #9.
+    expect(buildMaterialCacheMock).toHaveBeenCalledTimes(1);
+    // The cache is passed into every resolvePriceGP call so it can skip
+    // its per-item Materials.findOne round trip.
     expect(resolvePriceGPMock).toHaveBeenCalledTimes(5);
+    for (const call of resolvePriceGPMock.mock.calls) {
+      const ctx = call[2];
+      expect(ctx.materialCache).toBeInstanceOf(Map);
+    }
   });
 
   it("fetches local+global pools when a valid region is supplied", async () => {
