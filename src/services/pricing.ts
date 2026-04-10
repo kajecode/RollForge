@@ -7,9 +7,62 @@ import { Types } from "mongoose";
 
 export interface PricingCtx {
   region?: string | null;
-  regionId?: Types.ObjectId | string | null;    
+  regionId?: Types.ObjectId | string | null;
   isBlackmarket?: boolean;
   marketLevel?: MarketLevel;
+  /**
+   * Optional per-batch material cache. Pre-populate this with
+   * buildMaterialCache(slugs) before calling resolvePriceGP in a loop to
+   * avoid the per-item Materials.findOne N+1 (see issue #9).
+   *
+   * Keys are material slugs; a value of `null` is an explicit "not found"
+   * entry so repeated misses don't fall through to Mongo.
+   */
+  materialCache?: Map<string, MaterialDoc | null>;
+}
+
+/**
+ * Batch-load materials for a list of candidate items and return a cache
+ * suitable for passing into PricingCtx.materialCache. One Mongo round-trip
+ * regardless of candidate count.
+ *
+ * Accepts anything that has an optional `material` or `materials[0]` field,
+ * so it can be called with raw Item docs (lean or hydrated).
+ */
+export async function buildMaterialCache(
+  items: Array<{ material?: string | null; materials?: unknown[] }>,
+): Promise<Map<string, MaterialDoc | null>> {
+  const slugs = new Set<string>();
+  for (const it of items) {
+    const slug = extractMaterialSlug(it as any);
+    if (slug) slugs.add(slug);
+  }
+  if (slugs.size === 0) {
+    return new Map();
+  }
+  const slugArray = [...slugs];
+  const cache = new Map<string, MaterialDoc | null>();
+  try {
+    const docs = await Materials.find({ slug: { $in: slugArray } }).lean<MaterialDoc[]>();
+    for (const doc of docs) {
+      cache.set((doc as any).slug, doc);
+    }
+  } catch {
+    // fall through — leave slugs unresolved, callers will see null
+  }
+  // Pin misses so per-item lookups also short-circuit.
+  for (const slug of slugArray) {
+    if (!cache.has(slug)) cache.set(slug, null);
+  }
+  return cache;
+}
+
+function extractMaterialSlug(item: any): string | null {
+  if (typeof item?.material === "string" && item.material) return item.material;
+  if (Array.isArray(item?.materials) && item.materials.length > 0) {
+    return String(item.materials[0]);
+  }
+  return null;
 }
 
 /** Default multipliers (can be overridden by GuildConfig economy fields) */
@@ -24,8 +77,14 @@ const DEFAULT_IMPORT_MULTIPLIER = 1.25; // applied if item is not local to regio
 const DEFAULT_LOCAL_DISCOUNT = 0.9;     // applied if item is explicitly local to region
 const DEFAULT_MATERIAL_MULTIPLIER = 1.0;
 
-async function fetchMaterialBySlug(slug?: string | null): Promise<any | null> {
+async function fetchMaterialBySlug(
+  slug?: string | null,
+  cache?: Map<string, MaterialDoc | null>,
+): Promise<MaterialDoc | null> {
   if (!slug) return null;
+  if (cache && cache.has(slug)) {
+    return cache.get(slug) ?? null;
+  }
   try {
     const mat = await Materials.findOne({ slug }).lean<MaterialDoc>();
     return mat ?? null;
@@ -236,15 +295,13 @@ export async function resolvePriceGP(
 
     // 4) Material layer
     // Support either `item.material` (string) or `item.materials[0]` if you ever migrate.
-    const materialSlug: string | null =
-      (typeof (item as any).material === "string" && (item as any).material) ||
-      (Array.isArray((item as any).materials) && (item as any).materials.length
-        ? String((item as any).materials[0])
-        : null);
+    const materialSlug: string | null = extractMaterialSlug(item);
 
     let materialMult = DEFAULT_MATERIAL_MULTIPLIER;
     if (materialSlug) {
-      const matDoc = await fetchMaterialBySlug(materialSlug);
+      // Cached path (issue #9): stockGenerator pre-builds a per-batch
+      // Materials cache so we don't round-trip Mongo per candidate.
+      const matDoc = await fetchMaterialBySlug(materialSlug, ctx?.materialCache);
       materialMult = resolveMaterialMultiplier(matDoc, materialSlug, activeRegionSlug, guildCfg, ctx?.regionId ?? null);
     }
 
