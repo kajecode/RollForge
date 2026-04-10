@@ -68,7 +68,16 @@ RegionSchema.pre("save", async function () {
     }
   } else if (!doc.path) {
     // ensure path exists at creation
-    doc.path = doc.parent ? "FIXME" : norm(doc.slug);
+    if (doc.parent) {
+      // If we hit this branch we have a parent but `isModified` did not fire,
+      // which means the upstream hook logic was bypassed (e.g. a direct write
+      // that skipped the parent/slug branch above). Fail loudly instead of
+      // writing the literal string "FIXME" to the database.
+      throw new Error(
+        `Region ${doc.slug}: cannot resolve path from parent without re-running the modified branch — upstream write skipped the slug/parent hook`,
+      );
+    }
+    doc.path = norm(doc.slug);
   }
 
   // guard against cycles: parent cannot be in descendants
