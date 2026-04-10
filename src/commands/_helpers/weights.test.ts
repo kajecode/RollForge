@@ -143,16 +143,37 @@ describe("weightedSample", () => {
     expect(weightedSample(items, 5, () => 1)).toHaveLength(2);
   });
 
-  it("documents current zero-weight behavior: returns fewer than k when all weights are 0", () => {
-    // NOTE: this behavior is tracked in issue #15 — the fix should fall back to
-    // uniform sampling instead of exiting early. Once fixed, flip this test to
-    // expect exactly `k` items.
+  it("falls back to uniform sampling when all weights are 0 (#15)", () => {
+    // Previously weightedSample exited early on sum=0 and returned nothing,
+    // which let shops silently generate zero stock when a guild config
+    // zeroed out its rarity table. Now it picks uniformly instead.
     const items = [1, 2, 3];
     const picks = weightedSample(items, 3, () => 0);
-    expect(picks).toHaveLength(0);
+    expect(picks).toHaveLength(3);
+    expect(new Set(picks).size).toBe(3); // still sampling without replacement
+    expect(picks.slice().sort()).toEqual([1, 2, 3]);
   });
 
-  it("is deterministic when Math.random is stubbed", () => {
+  it("caps uniform-fallback output at pool size", () => {
+    const items = [1, 2];
+    const picks = weightedSample(items, 5, () => 0);
+    expect(picks).toHaveLength(2);
+  });
+
+  it("mixes weighted and uniform phases when weights run out mid-pick", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const items = ["a", "b", "c"];
+    const weights: Record<string, number> = { a: 1, b: 0, c: 0 };
+    const picks = weightedSample(items, 3, (x) => weights[x]);
+    // First pick is weighted (only 'a' has mass, so it's chosen); the next
+    // two picks see sum=0 and fall back to uniform. With random=0 the
+    // uniform branch selects index 0 each time.
+    expect(picks).toHaveLength(3);
+    expect(picks[0]).toBe("a");
+    expect(new Set(picks)).toEqual(new Set(["a", "b", "c"]));
+  });
+
+  it("is deterministic when Math.random is stubbed (weighted path)", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const items = ["a", "b", "c"];
     // With random=0 the first candidate is always selected (r becomes < 0
