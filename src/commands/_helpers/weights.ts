@@ -52,14 +52,22 @@ export function availabilityWeight(item: any, marketLevel: MarketLevel, region: 
 
 // generic weighted sampler without replacement
 export function weightedSample<T>(items: T[], k: number, weightFn: (x: T)=>number) {
-  const pool = items.map((x, i) => ({ x, w: Math.max(0, weightFn(x)) }));
+  const pool = items.map((x) => ({ x, w: Math.max(0, weightFn(x)) }));
   const out: T[] = [];
   for (let pick = 0; pick < k && pool.length; pick++) {
     const sum = pool.reduce((a,b)=>a+b.w, 0);
-    if (sum <= 0) break;
-    let r = Math.random() * sum;
-    const idx = pool.findIndex(p => (r -= p.w) < 0);
-    const choose = idx >= 0 ? idx : (pool.length - 1);
+    let choose: number;
+    if (sum <= 0) {
+      // Fall back to uniform sampling when every remaining candidate has a
+      // zero/negative weight. Previously the sampler exited early here and
+      // returned fewer than k items — a shop could silently generate zero
+      // stock when a guild config zeroed out its rarity table. See #15.
+      choose = Math.floor(Math.random() * pool.length);
+    } else {
+      let r = Math.random() * sum;
+      const idx = pool.findIndex(p => (r -= p.w) < 0);
+      choose = idx >= 0 ? idx : (pool.length - 1);
+    }
     out.push(pool[choose].x);
     pool.splice(choose, 1);
   }
