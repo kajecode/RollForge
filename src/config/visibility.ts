@@ -6,6 +6,22 @@ import {
   PermissionsBitField,
 } from "discord.js";
 import { getGuildConfig, type GuildConfigLean } from "@/services/guild";
+import logger from "@/services/logger";
+
+async function safeGuildConfig(guildId: string | undefined): Promise<GuildConfigLean | null> {
+  if (!guildId) return null;
+  try {
+    return await getGuildConfig(guildId);
+  } catch (err) {
+    // Distinguish a failed lookup (logged) from a missing row (returns null
+    // silently — that's a normal state for brand-new guilds).
+    logger.warn(
+      `visibility: guild cfg fetch failed for guildId=${guildId}: ${(err as any)?.message ?? err}`,
+      err as any,
+    );
+    return null;
+  }
+}
 
 export type Visibility = "gm" | "players" | "public";
 
@@ -52,9 +68,7 @@ export async function visibilityForInteraction(
   const guildId =
     member && "guild" in member ? (member as GuildMember).guild?.id : undefined;
 
-  const cfg: GuildConfigLean | null = guildId
-    ? await getGuildConfig(guildId)
-    : null;
+  const cfg: GuildConfigLean | null = await safeGuildConfig(guildId);
 
   // Channel limited to players/public?
   if (cfg?.playerChannelIds?.includes(channelId)) {
@@ -78,9 +92,7 @@ export async function visibilityForMember(
   const guildId =
     member && "guild" in member ? (member as GuildMember).guild?.id : undefined;
 
-  const cfg: GuildConfigLean | null = guildId
-    ? await getGuildConfig(guildId)
-    : null;
+  const cfg: GuildConfigLean | null = await safeGuildConfig(guildId);
 
   const isGM =
     memberHasRole(member, (cfg?.gmRoleId ?? undefined)) || memberHasManageGuild(member);

@@ -5,6 +5,16 @@ vi.mock("@/services/guild.js", () => ({
   getGuildConfig: vi.fn(),
 }));
 
+const loggerWarn = vi.fn();
+vi.mock("@/services/logger.js", () => ({
+  default: {
+    warn: (...args: any[]) => loggerWarn(...args),
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 import { visibilityForInteraction, visibilityForMember } from "./visibility.js";
 import { getGuildConfig } from "@/services/guild.js";
 
@@ -70,6 +80,25 @@ describe("visibilityForInteraction", () => {
   it("does not call getGuildConfig when there is no guildId on the member", async () => {
     await visibilityForInteraction(apiMember({ roles: [] }), "chan-1");
     expect(mockGetGuildConfig).not.toHaveBeenCalled();
+  });
+
+  it("logs a warn and falls back to defaults when getGuildConfig throws (#6)", async () => {
+    mockGetGuildConfig.mockRejectedValue(new Error("mongo down"));
+    const result = await visibilityForInteraction(
+      apiMember({ guildId: "g1", manageGuild: true }),
+      "chan-1",
+    );
+    // Member has ManageGuild so they still get gm visibility even though
+    // cfg lookup failed — falling back to null cfg, not null visibility.
+    expect(result).toEqual(["gm", "players", "public"]);
+    expect(loggerWarn).toHaveBeenCalledTimes(1);
+    expect(loggerWarn.mock.calls[0][0]).toMatch(/guild cfg fetch failed/);
+  });
+
+  it("does NOT log when getGuildConfig returns null (missing cfg is a normal state)", async () => {
+    mockGetGuildConfig.mockResolvedValue(null);
+    await visibilityForInteraction(apiMember({ guildId: "g1" }), "chan-1");
+    expect(loggerWarn).not.toHaveBeenCalled();
   });
 });
 
