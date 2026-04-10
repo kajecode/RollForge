@@ -31,6 +31,40 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     return interaction.editReply(`Allowed regions: ${doc.allowedRegions.join(", ") || "(none)"}.`);
   }
 
+  if (sub === "settlement") {
+    // Per-settlement-size override for the stocking rules used by
+    // /shop generation. Defaults live in DEFAULT_SIZE_RULES in
+    // src/commands/_helpers/stockGenerator.ts. See issue #24.
+    const sizeRaw = interaction.options.getString("size", true).toLowerCase();
+    const validSizes = ["hamlet", "village", "town", "city", "metropolis"];
+    if (!validSizes.includes(sizeRaw)) {
+      return interaction.editReply(
+        `Unknown settlement size **${sizeRaw}**. Valid: ${validSizes.join(", ")}.`,
+      );
+    }
+    const size = sizeRaw as "hamlet" | "village" | "town" | "city" | "metropolis";
+
+    const gpCap    = interaction.options.getInteger("gp_cap", true);
+    const itemsMin = interaction.options.getInteger("items_min", true);
+    const itemsMax = interaction.options.getInteger("items_max", true);
+
+    if (gpCap < 0 || itemsMin < 0 || itemsMax < 0) {
+      return interaction.editReply("Values must be non-negative.");
+    }
+    if (itemsMin > itemsMax) {
+      return interaction.editReply(`items_min (${itemsMin}) cannot exceed items_max (${itemsMax}).`);
+    }
+
+    await GuildConfig.findOneAndUpdate(
+      { guildId: interaction.guildId! },
+      { $set: { [`economy.settlementRules.${size}`]: { gpCap, itemsMin, itemsMax } } },
+      { upsert: true, new: true },
+    );
+    return interaction.editReply(
+      `Set **${size}** stocking rule: gp cap **${gpCap}**, items **${itemsMin}**–**${itemsMax}**.`,
+    );
+  }
+
   if (sub === "set") {
     const economy = interaction.options.getNumber("economy", false);
     const gmRole = interaction.options.getRole("gm_role", false);
