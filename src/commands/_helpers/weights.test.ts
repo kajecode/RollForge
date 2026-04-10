@@ -1,10 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   rarityWeight,
   categoryWeight,
   regionBoost,
   blackmarketBoost,
   availabilityWeight,
+  weightedSample,
 } from "./weights.js";
 import { DEFAULT_DISTRICT_WEIGHTS } from "@/util/constants.js";
 
@@ -116,5 +117,48 @@ describe("availabilityWeight", () => {
     expect(availabilityWeight(boosted, "middle", null, false)).toBeGreaterThan(
       availabilityWeight(base, "middle", null, false)
     );
+  });
+});
+
+describe("weightedSample", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns exactly k items when enough positive weights are available", () => {
+    const items = [1, 2, 3, 4, 5];
+    const picks = weightedSample(items, 3, () => 1);
+    expect(picks).toHaveLength(3);
+  });
+
+  it("never returns the same item twice (sampling without replacement)", () => {
+    const items = [10, 20, 30, 40];
+    const picks = weightedSample(items, 4, () => 1);
+    expect(new Set(picks).size).toBe(picks.length);
+    expect(picks.sort()).toEqual([10, 20, 30, 40]);
+  });
+
+  it("caps output at pool size if k exceeds items.length", () => {
+    const items = [1, 2];
+    expect(weightedSample(items, 5, () => 1)).toHaveLength(2);
+  });
+
+  it("documents current zero-weight behavior: returns fewer than k when all weights are 0", () => {
+    // NOTE: this behavior is tracked in issue #15 — the fix should fall back to
+    // uniform sampling instead of exiting early. Once fixed, flip this test to
+    // expect exactly `k` items.
+    const items = [1, 2, 3];
+    const picks = weightedSample(items, 3, () => 0);
+    expect(picks).toHaveLength(0);
+  });
+
+  it("is deterministic when Math.random is stubbed", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const items = ["a", "b", "c"];
+    // With random=0 the first candidate is always selected (r becomes < 0
+    // after the first decrement), then spliced out — so the picks follow
+    // the original order head-first.
+    const picks = weightedSample(items, 2, () => 1);
+    expect(picks).toEqual(["a", "b"]);
   });
 });
