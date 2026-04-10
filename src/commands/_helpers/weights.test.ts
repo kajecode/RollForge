@@ -57,6 +57,41 @@ describe("blackmarketBoost", () => {
     const illicit = blackmarketBoost(true, { rarity: "rare", blackmarketOnly: true });
     expect(illicit).toBeGreaterThan(normal);
   });
+
+  describe("split knobs (#17)", () => {
+    it("scales the blackmarket branch by blackmarketAvailabilityMultiplier", () => {
+      const base = blackmarketBoost(true, { rarity: "rare" });
+      const cfg = { economy: { blackmarketAvailabilityMultiplier: 2 } } as any;
+      const scaled = blackmarketBoost(true, { rarity: "rare" }, cfg);
+      expect(scaled).toBeCloseTo(base * 2);
+    });
+
+    it("falls back to the legacy blackmarketMultiplier when the split knob is unset", () => {
+      const cfg = { economy: { blackmarketMultiplier: 3 } } as any;
+      const scaled = blackmarketBoost(true, { rarity: "rare" }, cfg);
+      const base = blackmarketBoost(true, { rarity: "rare" });
+      expect(scaled).toBeCloseTo(base * 3);
+    });
+
+    it("prefers the split knob over the legacy knob when both are set", () => {
+      const cfg = {
+        economy: {
+          blackmarketAvailabilityMultiplier: 2,
+          blackmarketMultiplier: 10,
+        },
+      } as any;
+      const base = blackmarketBoost(true, { rarity: "rare" });
+      const scaled = blackmarketBoost(true, { rarity: "rare" }, cfg);
+      expect(scaled).toBeCloseTo(base * 2);
+    });
+
+    it("does NOT scale the open-market penalty branch", () => {
+      const cfg = { economy: { blackmarketAvailabilityMultiplier: 2 } } as any;
+      expect(blackmarketBoost(false, { rarity: "common" }, cfg)).toBe(1);
+      expect(blackmarketBoost(false, { rarity: "very rare" }, cfg)).toBe(0.3);
+      expect(blackmarketBoost(false, { blackmarketOnly: true, rarity: "common" }, cfg)).toBe(0.05);
+    });
+  });
 });
 
 describe("rarityWeight", () => {

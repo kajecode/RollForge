@@ -22,7 +22,20 @@ const GuildConfigSchema = new Schema({
     marketLevelMultipliers: { low: Number, middle: Number, high: Number },
     importMultiplier: Number,
     localDiscount: Number,
+    // Legacy knob — scales both availability weight AND final price.
+    // Kept for backwards compatibility; prefer the split knobs below.
+    // When either split knob is unset, it falls back to this.
     blackmarketMultiplier: Number,
+    // Separate knobs for the two distinct effects of a black market.
+    // See issue #17 for the history of why these are split:
+    //   - Availability: how often a blackmarket-tagged item appears in
+    //     a shop's candidate pool (used by availabilityWeight()).
+    //   - Price: the per-item markup applied to a sale on the black
+    //     market (used by resolvePriceGP()).
+    // Keeping them independent lets GMs make black markets rare without
+    // also making them expensive (or vice versa).
+    blackmarketPriceMultiplier: Number,
+    blackmarketAvailabilityMultiplier: Number,
     materialOverrides: { type: Map, of: Number, default: undefined }, // keys are material slugs
     materialRegionOverrides: { type: Map, of: new Schema({
       // keys are region slugs, values are { materialSlug: multiplier }
