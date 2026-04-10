@@ -40,6 +40,18 @@ const ShopSchema = new Schema({
 }, { timestamps: true });
 
 ShopSchema.index({ guildId: 1, region: 1, town: 1, name: 1 }, { unique: true });
+// Case-insensitive collation indexes supporting autocomplete prefix
+// lookups for shop name and town (#13). Scoped by guildId in the
+// index key to keep per-guild autocomplete queries from scanning
+// across tenants.
+ShopSchema.index(
+  { guildId: 1, name: 1 },
+  { name: "guild_name_ci", collation: { locale: "en", strength: 2 } },
+);
+ShopSchema.index(
+  { guildId: 1, town: 1 },
+  { name: "guild_town_ci", collation: { locale: "en", strength: 2 } },
+);
 
 export type ShopDoc = InferSchemaType<typeof ShopSchema>;
 export type StockDoc = InferSchemaType<typeof StockSchema>;

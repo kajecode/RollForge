@@ -39,6 +39,11 @@ RegionSchema.index({ path: 1 }, { unique: true });
 RegionSchema.index({ ancestors: 1 });
 // Geospatial (if you use geo):
 RegionSchema.index({ geo: "2dsphere" });
+// Case-insensitive collation index for autocomplete prefix lookup (#13).
+RegionSchema.index(
+  { name: 1 },
+  { name: "name_ci", collation: { locale: "en", strength: 2 } },
+);
 
 // Keep path/ancestors consistent
 function norm(s: string) {
