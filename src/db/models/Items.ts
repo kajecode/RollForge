@@ -46,6 +46,13 @@ ItemSchema.index({ tags: 1 });
 ItemSchema.index({ regions: 1 });
 ItemSchema.index({ materials: 1 });
 ItemSchema.index({ category: 1, rarity: 1 }); // handy filter combo
+// Case-insensitive collation index supporting the autocomplete prefix
+// lookup in src/commands/autocomplete.ts (#13). Without this, every
+// keystroke in /price item triggers a full collection scan.
+ItemSchema.index(
+  { name: 1 },
+  { name: "name_ci", collation: { locale: "en", strength: 2 } },
+);
 
 export type ItemDoc = InferSchemaType<typeof ItemSchema>;
 export default mongoose.models.Item || mongoose.model("Item", ItemSchema);

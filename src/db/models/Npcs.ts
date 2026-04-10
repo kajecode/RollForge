@@ -17,6 +17,12 @@ const NpcSchema = new Schema({
 }, { timestamps: true });
 
 NpcSchema.index({ guildId: 1, name: 1 }, { unique: true });
+// Case-insensitive collation index supporting autocomplete prefix
+// lookup for NPC name (#13).
+NpcSchema.index(
+  { guildId: 1, name: 1 },
+  { name: "guild_name_ci", collation: { locale: "en", strength: 2 } },
+);
 
 export type RelationDoc = InferSchemaType<typeof RelationSchema>;
 export type NpcDoc = InferSchemaType<typeof NpcSchema>;
