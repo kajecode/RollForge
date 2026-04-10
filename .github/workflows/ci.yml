@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: build + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Dummy env values so the Zod env validator in src/config/env.ts does not
+    # throw at import time. Tests mock every outbound service (Mongo, Discord,
+    # OpenAI) so none of these values are actually dialed.
+    env:
+      DISCORD_BOT_TOKEN: ci-dummy
+      DISCORD_CLIENT_ID: ci-dummy
+      DISCORD_GUILD_ID: ci-dummy
+      DISCORD_ERROR_CHANNEL_ID: ci-dummy
+      MONGODB_URI: mongodb://localhost:27017
+      MONGODB_DB_NAME: rollforge-ci
+      OPENAI_API_KEY: sk-ci-dummy
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
