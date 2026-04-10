@@ -1,0 +1,15 @@
+{
+  "_comment": "Keyword (Atlas Search) index for the chunks collection. Name must be 'lexical' to match src/core/rag.ts keywordSearch(). The $match stage after $search still filters by visibility in-memory; the scalar index defined in src/db/models/Chunks.ts covers that path.",
+  "name": "lexical",
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "title": {
+        "type": "string"
+      },
+      "text": {
+        "type": "string"
+      }
+    }
+  }
+}
