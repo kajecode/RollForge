@@ -95,16 +95,32 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
     }
   }
 
-  // Generate fresh stock
-  const { picks: chosen, gpCap } = await generateStock({
-    type,
-    marketLevel,
-    region,
-    blackmarket: isBlackmarket,
-    settlementSize,
-    desiredCount: limit,
-    guildCfg,
-  });
+  // Generate fresh stock. generateStock throws on an unknown region slug
+  // (see issue #5) — catch it so the GM sees a friendly message instead of
+  // the generic "something went wrong" fallback from the top-level handler.
+  let chosen: Awaited<ReturnType<typeof generateStock>>["picks"];
+  let gpCap: number;
+  try {
+    const result = await generateStock({
+      type,
+      marketLevel,
+      region,
+      blackmarket: isBlackmarket,
+      settlementSize,
+      desiredCount: limit,
+      guildCfg,
+    });
+    chosen = result.picks;
+    gpCap = result.gpCap;
+  } catch (err: any) {
+    if (/^Unknown region:/.test(err?.message ?? "")) {
+      await interaction.editReply(
+        `Region **${region}** not found. Check \`/guildconfig view\` for valid regions.`,
+      );
+      return;
+    }
+    throw err;
+  }
 
   const footerBase = guildCfg?.economyMultiplier && guildCfg.economyMultiplier !== 1
     ? `Economy x${guildCfg.economyMultiplier}`

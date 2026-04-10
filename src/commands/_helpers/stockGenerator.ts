@@ -52,11 +52,17 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
     guildCfg = null,
   } = params;
 
-  // Resolve region slug → ObjectId
+  // Resolve region slug → ObjectId. Fail fast when the caller passed a slug
+  // that doesn't resolve to a real region — previously the code silently fell
+  // back to a global candidate pool and still forwarded the bad slug to the
+  // pricing layer, producing generic shops labelled with phantom regions.
   let regionId: Types.ObjectId | null = null;
   if (regionSlug) {
     const r = await Regions.findOne({ slug: regionSlug }).select("_id slug").lean<RegionDoc>();
-    regionId = r?._id ?? null;
+    if (!r) {
+      throw new Error(`Unknown region: ${regionSlug}`);
+    }
+    regionId = r._id;
   }
 
   const rules = SIZE_RULES[settlementSize];
