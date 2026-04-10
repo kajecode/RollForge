@@ -1,4 +1,5 @@
 import GuildConfig, { GuildConfigDoc } from "@/db/models/GuildConfig";
+import { mapGet } from "@/util/mapLike";
 
 export type GuildConfigLean = GuildConfigDoc & { _id: any };
 
@@ -11,11 +12,8 @@ import { MAGIC_PRICE_BY_RARITY } from "@/commands/_helpers/magicPricing";
 export function rarityBandFor(guild: GuildConfigLean | null | undefined, rarity: string) {
   const key = rarity?.toLowerCase();
   if (!key) return null;
-
-  // handle Map (real doc) or plain object (lean serialization)
-  const ro: any = guild?.rarityOverrides as any;
-  const m = typeof ro?.get === "function" ? ro.get(key) : ro?.[key];
-  return m ?? MAGIC_PRICE_BY_RARITY[key] ?? null;
+  const override = mapGet<{ min: number; max: number }>(guild?.rarityOverrides as any, key);
+  return override ?? MAGIC_PRICE_BY_RARITY[key] ?? null;
 }
 
 export function applyEconomy(price: number | null | undefined, guild: GuildConfigLean | null | undefined) {

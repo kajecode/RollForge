@@ -1,12 +1,13 @@
 import type { GuildConfigDoc } from "@/db/models/GuildConfig";
 import { DEFAULT_DISTRICT_WEIGHTS } from "@/util/constants";
+import { mapGet } from "@/util/mapLike";
 
 export type MarketLevel = "low" | "middle" | "high";
 
 export function rarityWeight(rarity: string, marketLevel: MarketLevel, cfg?: GuildConfigDoc | null) {
-  const table = (cfg?.districtWeights?.get?.(marketLevel) || (cfg?.districtWeights as any)?.[marketLevel]) ?? DEFAULT_DISTRICT_WEIGHTS[marketLevel];
+  const table = mapGet<any>(cfg?.districtWeights as any, marketLevel) ?? DEFAULT_DISTRICT_WEIGHTS[marketLevel];
   const r = (rarity || "none").toLowerCase();
-  const w = (table?.rarity && (table.rarity.get?.(r) ?? (table.rarity as any)?.[r])) ?? 1;
+  const w = mapGet<number>(table?.rarity, r) ?? 1;
   return Math.max(0, Number(w) || 0);
 }
 
@@ -14,9 +15,9 @@ export function categoryWeight(category: string, marketLevel: MarketLevel, cfg?:
   const key =
     category === "armor" ? "heavy-armor"
     : category === "light-armor" ? "light-armor"
-    : category; // you can normalize by your categorization scheme
-  const table = (cfg?.districtWeights?.get?.(marketLevel) || (cfg?.districtWeights as any)?.[marketLevel]) ?? DEFAULT_DISTRICT_WEIGHTS[marketLevel];
-  const w = (table?.category && (table.category.get?.(key) ?? (table.category as any)?.[key])) ?? 1;
+    : category; // normalize by the project's category scheme
+  const table = mapGet<any>(cfg?.districtWeights as any, marketLevel) ?? DEFAULT_DISTRICT_WEIGHTS[marketLevel];
+  const w = mapGet<number>(table?.category, key) ?? 1;
   return Number(w) || 1;
 }
 

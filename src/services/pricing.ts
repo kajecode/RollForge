@@ -3,6 +3,7 @@ import { GuildConfigDoc } from "@/db/models/GuildConfig";
 import { ItemDoc } from "@/db/models/Items";
 import Materials, { MaterialDoc } from "@/db/models/Materials";
 import { rarityBandFor, applyEconomy, GuildConfigLean } from "@/services/guild";
+import { mapGet } from "@/util/mapLike";
 import { Types } from "mongoose";
 
 export interface PricingCtx {
@@ -118,24 +119,20 @@ function resolveMaterialMultiplier(
       mult *= mat.baseMultiplier;
     }
 
-    // 2) Material per-region definition on the material itself
-    // Support both object & Map-like access; use "regional" or "regions" keys defensively.
+    // 2) Material per-region definition on the material itself. Handles both
+    //    Map and POJO shapes via mapGet so lean-vs-hydrated docs both work.
     let appliedExplicitRegion = false;
 
-    const regionalBySlug: any = (mat as any).regional;
-    if (!appliedExplicitRegion && regionalBySlug && regionSlug && regionalBySlug[regionSlug]) {
-      const rDef = regionalBySlug[regionSlug];
+    if (regionSlug) {
+      const rDef = mapGet<{ multiplier?: number }>((mat as any).regional, regionSlug);
       if (rDef && typeof rDef.multiplier === "number" && Number.isFinite(rDef.multiplier)) {
         mult *= rDef.multiplier;
         appliedExplicitRegion = true;
       }
     }
 
-    const regionalById: Map<string, any> | undefined = (mat as any).regionalById instanceof Map
-      ? (mat as any).regionalById
-      : undefined;
-    if (!appliedExplicitRegion && regionalById && regionId) {
-      const rDef = regionalById.get(String(regionId));
+    if (!appliedExplicitRegion && regionId) {
+      const rDef = mapGet<{ multiplier?: number }>((mat as any).regionalById, String(regionId));
       if (rDef && typeof rDef.multiplier === "number" && Number.isFinite(rDef.multiplier)) {
         mult *= rDef.multiplier;
         appliedExplicitRegion = true;
@@ -172,47 +169,27 @@ function resolveMaterialMultiplier(
     }
   }
 
-  // 3) Guild economy overrides
-  // Global per-material override
-  if (
-    eco.materialOverrides &&
-    materialSlug &&
-    Object.prototype.hasOwnProperty.call(eco.materialOverrides, materialSlug)
-  ) {
-    const override = (eco.materialOverrides as unknown as Record<string, unknown>)[materialSlug];
+  // 3) Guild economy overrides. Previously this section had two blocks
+  //    that tried to read materialOverrides with clashing guards — one
+  //    used Object.hasOwnProperty (broken for real Map instances) and
+  //    the second was a near-duplicate of the first that called .get()
+  //    behind the same hasOwnProperty guard. Both were dead on lean
+  //    docs that rehydrated as POJOs but still carried the Map schema
+  //    flag. mapGet handles both shapes uniformly.
+  if (materialSlug) {
+    const override = mapGet<number>(eco.materialOverrides as any, materialSlug);
     if (typeof override === "number" && Number.isFinite(override) && override > 0) {
-      mult = override; // treat as absolute override for the final material multiplier
-    }
-  }
-
-  // Per-material-per-region override
-  if (
-    eco.materialOverrides &&
-    materialSlug &&
-    Object.prototype.hasOwnProperty.call(eco.materialOverrides, materialSlug)
-  ) {
-    const override = (eco.materialOverrides as Map<string, number>).get(materialSlug);
-    if (typeof override === "number" && Number.isFinite(override) && override > 0) {
+      // Treat as an absolute override for the final material multiplier.
       mult = override;
     }
   }
 
-  if (
-    eco.materialRegionOverrides instanceof Map &&
-    materialSlug &&
-    regionSlug &&
-    eco.materialRegionOverrides.has(materialSlug)
-  ) {
-    const regionOverrides = eco.materialRegionOverrides.get(materialSlug);
-    if (
-      regionOverrides &&
-      typeof regionOverrides === "object" &&
-      Object.prototype.hasOwnProperty.call(regionOverrides, regionSlug)
-    ) {
-      const rOverride = (regionOverrides as Record<string, unknown>)[regionSlug];
-      if (typeof rOverride === "number" && Number.isFinite(rOverride) && rOverride > 0) {
-        mult = rOverride;
-      }
+  // Per-material-per-region override
+  if (materialSlug && regionSlug) {
+    const perMaterial = mapGet<unknown>(eco.materialRegionOverrides as any, materialSlug);
+    const rOverride = mapGet<number>(perMaterial as any, regionSlug);
+    if (typeof rOverride === "number" && Number.isFinite(rOverride) && rOverride > 0) {
+      mult = rOverride;
     }
   }
 
