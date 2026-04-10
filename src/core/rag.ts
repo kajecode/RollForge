@@ -57,11 +57,21 @@ export async function keywordSearch(queryText: string, opts: SearchOpts = {}) {
   return results as Array<{ _id: mongoose.Types.ObjectId; text: string; title?: string; documentId: mongoose.Types.ObjectId; visibility: string; score: number }>;
 }
 
+// Clamp the final merged result size so callers can't blow up memory or
+// Atlas latency by passing arbitrarily large k.
+const MAX_MERGED_K = 20;
+// Per-component caps keep the RRF pool bounded even when the caller asks
+// for a large k. Values chosen to comfortably cover MAX_MERGED_K * 3.
+const MAX_VEC_K = 30;
+const MAX_KW_K = 60;
+
 export async function hybridSearch(queryText: string, queryEmbedding: number[], opts: SearchOpts = {}) {
-  const k = opts.k ?? 6;
+  const k = Math.min(Math.max(opts.k ?? 6, 1), MAX_MERGED_K);
+  const vecK = Math.min(Math.max(k, 10), MAX_VEC_K);
+  const kwK = Math.min(Math.max(k * 2, 20), MAX_KW_K);
   const [vec, kw] = await Promise.all([
-    vectorSearch(queryEmbedding, { ...opts, k: Math.max(k, 10) }),
-    keywordSearch(queryText, { ...opts, k: Math.max(k*2, 20) })
+    vectorSearch(queryEmbedding, { ...opts, k: vecK }),
+    keywordSearch(queryText, { ...opts, k: kwK })
   ]);
 
   const vecHits = vec.map((r, i) => ({ id: r._id.toString(), score: r.score, src: "vec" as const, payload: r }));
