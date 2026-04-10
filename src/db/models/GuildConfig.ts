@@ -5,6 +5,16 @@ const RarityBand = new Schema({
   max: { type: Number, required: true }
 }, { _id: false });
 
+// Per-settlement stocking rules override. Guilds can raise or lower
+// the per-item GP cap and the inventory size range per settlement
+// size (hamlet..metropolis). See issue #24 — previously these were a
+// hardcoded SIZE_RULES constant in stockGenerator.ts.
+const SettlementRule = new Schema({
+  gpCap:    { type: Number, required: true },
+  itemsMin: { type: Number, required: true },
+  itemsMax: { type: Number, required: true },
+}, { _id: false });
+
 const GuildConfigSchema = new Schema({
   guildId: { type: String, unique: true, index: true },
   economyMultiplier: { type: Number, default: 1 }, // scales all prices
@@ -18,7 +28,11 @@ const GuildConfigSchema = new Schema({
       // keys are region slugs, values are { materialSlug: multiplier }
       type: Map,
       of: Number
-    }, { _id: false }), default: undefined }
+    }, { _id: false }), default: undefined },
+    // Per-settlement-size stocking rules override. Keys are one of
+    // hamlet|village|town|city|metropolis. Missing entries fall back
+    // to SIZE_RULES in src/commands/_helpers/stockGenerator.ts.
+    settlementRules: { type: Map, of: SettlementRule, default: undefined },
   },
   rarityOverrides: {
     type: Map,

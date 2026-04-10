@@ -17,6 +17,11 @@ const cmds = [
       .addIntegerOption(o => o.setName("max").setDescription("max gp").setRequired(true)))
     .addSubcommand(sc => sc.setName("regions").setDescription("Set allowed regions (comma-separated)")
       .addStringOption(o => o.setName("regions").setDescription("Comma-separated region slugs")))
+    .addSubcommand(sc => sc.setName("settlement").setDescription("Override stocking rules for a settlement size")
+      .addStringOption(o => o.setName("size").setDescription("hamlet|village|town|city|metropolis").setRequired(true))
+      .addIntegerOption(o => o.setName("gp_cap").setDescription("Per-item gp cap").setRequired(true))
+      .addIntegerOption(o => o.setName("items_min").setDescription("Minimum items stocked").setRequired(true))
+      .addIntegerOption(o => o.setName("items_max").setDescription("Maximum items stocked").setRequired(true)))
     .addSubcommand(sc => sc.setName("view").setDescription("View current guild settings")),
   new SlashCommandBuilder().setName("rule").setDescription("Rules lookup")
     .addStringOption(o => o.setName("query").setDescription("e.g., grapple check").setRequired(true)),

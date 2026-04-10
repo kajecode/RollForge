@@ -25,7 +25,11 @@ vi.mock("@/services/pricing.js", () => ({
   buildMaterialCache: (...args: any[]) => buildMaterialCacheMock(...args),
 }));
 
-import { generateStock } from "./stockGenerator.js";
+import {
+  generateStock,
+  resolveSettlementRule,
+  DEFAULT_SIZE_RULES,
+} from "./stockGenerator.js";
 
 function chainable(leanResult: any) {
   const chain: any = {
@@ -179,5 +183,85 @@ describe("generateStock", () => {
 
     // One local query + one global query = 2 Item.find invocations.
     expect(itemFind).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("resolveSettlementRule (#24)", () => {
+  it("returns the default rule when no guild config is supplied", () => {
+    expect(resolveSettlementRule("town", null)).toEqual(DEFAULT_SIZE_RULES.town);
+    expect(resolveSettlementRule("hamlet", undefined)).toEqual(DEFAULT_SIZE_RULES.hamlet);
+  });
+
+  it("returns the default rule when the guild has no settlementRules", () => {
+    const guildCfg = { economy: {} } as any;
+    expect(resolveSettlementRule("village", guildCfg)).toEqual(DEFAULT_SIZE_RULES.village);
+  });
+
+  it("applies a full per-guild override", () => {
+    const guildCfg = {
+      economy: {
+        settlementRules: { town: { gpCap: 500, itemsMin: 6, itemsMax: 12 } },
+      },
+    } as any;
+    expect(resolveSettlementRule("town", guildCfg)).toEqual({
+      gpCap: 500,
+      itemsMin: 6,
+      itemsMax: 12,
+    });
+  });
+
+  it("works when settlementRules is a real Map (hydrated doc)", () => {
+    const guildCfg = {
+      economy: {
+        settlementRules: new Map([
+          ["city", { gpCap: 20_000, itemsMin: 25, itemsMax: 50 }],
+        ]),
+      },
+    } as any;
+    expect(resolveSettlementRule("city", guildCfg)).toEqual({
+      gpCap: 20_000,
+      itemsMin: 25,
+      itemsMax: 50,
+    });
+  });
+
+  it("merges partial overrides with defaults", () => {
+    const guildCfg = {
+      economy: {
+        settlementRules: { town: { gpCap: 750 } as any },
+      },
+    } as any;
+    const result = resolveSettlementRule("town", guildCfg);
+    expect(result.gpCap).toBe(750);
+    expect(result.itemsMin).toBe(DEFAULT_SIZE_RULES.town.itemsMin);
+    expect(result.itemsMax).toBe(DEFAULT_SIZE_RULES.town.itemsMax);
+  });
+
+  it("coerces itemsMin above itemsMax back down to itemsMax", () => {
+    const guildCfg = {
+      economy: {
+        settlementRules: { village: { gpCap: 100, itemsMin: 99, itemsMax: 4 } },
+      },
+    } as any;
+    const result = resolveSettlementRule("village", guildCfg);
+    expect(result.itemsMin).toBe(4);
+    expect(result.itemsMax).toBe(4);
+  });
+
+  it("rejects negative or non-finite fields and falls back to defaults", () => {
+    const guildCfg = {
+      economy: {
+        settlementRules: {
+          hamlet: { gpCap: -5, itemsMin: NaN, itemsMax: Infinity },
+        },
+      },
+    } as any;
+    expect(resolveSettlementRule("hamlet", guildCfg)).toEqual(DEFAULT_SIZE_RULES.hamlet);
+  });
+
+  it("throws on an unknown settlement size", () => {
+    expect(() => resolveSettlementRule("megalopolis" as any, null)).toThrow(
+      /Unknown settlementSize/,
+    );
   });
 });

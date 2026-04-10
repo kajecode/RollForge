@@ -4,19 +4,66 @@ import { SHOP_FILTERS, type ShopType } from "./shopPolicy";
 import { availabilityWeight, weightedSample, type MarketLevel } from "./weights";
 import { resolvePriceGP, buildMaterialCache } from "@/services/pricing";
 import { GuildConfigLean } from "@/services/guild";
+import { mapGet } from "@/util/mapLike";
 import { Types } from "mongoose";
 import Regions, { RegionDoc } from "@/db/models/Regions";
 
 /** Settlement sizes with per-item GP cap and stock range */
 export type SettlementSize = "hamlet" | "village" | "town" | "city" | "metropolis";
 
-const SIZE_RULES: Record<SettlementSize, { gpCap: number; itemsMin: number; itemsMax: number }> = {
+export interface SettlementRule {
+  gpCap: number;
+  itemsMin: number;
+  itemsMax: number;
+}
+
+/**
+ * Hardcoded fallback stocking rules per settlement size. Guilds can
+ * override any of these per-size via `economy.settlementRules` in
+ * GuildConfig — see issue #24.
+ */
+export const DEFAULT_SIZE_RULES: Record<SettlementSize, SettlementRule> = {
   hamlet:     { gpCap: 25,     itemsMin: 2,  itemsMax: 4  },
   village:    { gpCap: 100,    itemsMin: 5,  itemsMax: 10 },
   town:       { gpCap: 1000,   itemsMin: 10, itemsMax: 20 },
   city:       { gpCap: 10000,  itemsMin: 20, itemsMax: 40 },
   metropolis: { gpCap: 50000,  itemsMin: 40, itemsMax: 80 },
 };
+
+/**
+ * Resolve the effective stocking rule for a settlement size, preferring
+ * a guild-level override when present and falling back to DEFAULT_SIZE_RULES.
+ * Validates the override fields so a bad config can't produce a
+ * negative gpCap or itemsMin > itemsMax.
+ */
+export function resolveSettlementRule(
+  size: SettlementSize,
+  guildCfg?: GuildConfigLean | null,
+): SettlementRule {
+  const defaults = DEFAULT_SIZE_RULES[size];
+  if (!defaults) throw new Error(`Unknown settlementSize: ${size}`);
+
+  const override = mapGet<SettlementRule>((guildCfg as any)?.economy?.settlementRules, size);
+  if (!override) return defaults;
+
+  // Merge with defaults — a partial override is allowed.
+  const merged: SettlementRule = {
+    gpCap:    typeof override.gpCap === "number" && Number.isFinite(override.gpCap) && override.gpCap >= 0
+                ? override.gpCap
+                : defaults.gpCap,
+    itemsMin: typeof override.itemsMin === "number" && Number.isFinite(override.itemsMin) && override.itemsMin >= 0
+                ? Math.floor(override.itemsMin)
+                : defaults.itemsMin,
+    itemsMax: typeof override.itemsMax === "number" && Number.isFinite(override.itemsMax) && override.itemsMax >= 0
+                ? Math.floor(override.itemsMax)
+                : defaults.itemsMax,
+  };
+  // Guarantee itemsMin <= itemsMax regardless of input.
+  if (merged.itemsMin > merged.itemsMax) {
+    merged.itemsMin = merged.itemsMax;
+  }
+  return merged;
+}
 
 export interface GenerateStockParams {
   type: ShopType;
@@ -65,8 +112,7 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
     regionId = r._id;
   }
 
-  const rules = SIZE_RULES[settlementSize];
-  if (!rules) throw new Error(`Unknown settlementSize: ${settlementSize}`);
+  const rules = resolveSettlementRule(settlementSize, guildCfg);
 
   const policy = SHOP_FILTERS[type];
   if (!policy) throw new Error(`Unknown shop type: ${type}`);
