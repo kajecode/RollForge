@@ -10,9 +10,15 @@ export async function handleFeedback(interaction: ButtonInteraction) {
 
   const pending = popPendingFeedback(token);
   if (!pending) {
+    // No DB work to do — a plain reply is fine and satisfies the 3s ack.
     await interaction.reply({ ephemeral: true, content: "This feedback link has expired." });
     return;
   }
+
+  // Acknowledge the interaction *before* the DB write. Discord requires an
+  // ack within 3s, and Feedback.create can easily exceed that under load.
+  // deferUpdate keeps the original message intact while we wait.
+  await interaction.deferUpdate();
 
   await Feedback.create({
     guildId: pending.guildId,
@@ -27,5 +33,5 @@ export async function handleFeedback(interaction: ButtonInteraction) {
     new ButtonBuilder().setCustomId("rule_fb:up:done").setLabel(sentiment === "up" ? "👍 ✓" : "👍").setStyle(ButtonStyle.Secondary).setDisabled(true),
     new ButtonBuilder().setCustomId("rule_fb:down:done").setLabel(sentiment === "down" ? "👎 ✓" : "👎").setStyle(ButtonStyle.Secondary).setDisabled(true),
   );
-  await interaction.update({ components: [row] });
+  await interaction.editReply({ components: [row] });
 }
