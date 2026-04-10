@@ -20,7 +20,8 @@
     "import:prices": "tsx src/ingest/importPrices.ts ./data/5e-SRD-Items.csv",
     "dump": "tsx src/dumpToJson.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "validate:atlas": "node scripts/validate-atlas-indexes.mjs"
   },
   "dependencies": {
     "@dice-roller/rpg-dice-roller": "^5.5.1",
