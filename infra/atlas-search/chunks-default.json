@@ -1,0 +1,17 @@
+{
+  "_comment": "Vector search index for the chunks collection. Name must be 'default' to match src/core/rag.ts vectorSearch(). The 'visibility' filter field is required by issue #10 — without it, the $vectorSearch filter clause in rag.ts cannot narrow results by gm/players/public at index time.",
+  "name": "default",
+  "type": "vectorSearch",
+  "fields": [
+    {
+      "type": "vector",
+      "path": "embedding",
+      "numDimensions": 3072,
+      "similarity": "cosine"
+    },
+    {
+      "type": "filter",
+      "path": "visibility"
+    }
+  ]
+}

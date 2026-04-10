@@ -15,5 +15,11 @@ const ChunkSchema = new Schema({
 
 ChunkSchema.index({ documentId: 1, ord: 1 }, { unique: true });
 
+// Supports the $match stage in keywordSearch (src/core/rag.ts) and any
+// other aggregation that filters chunks by visibility. Without this the
+// keyword-search path scans every matching document from Atlas Search and
+// then filters in-memory. See issue #10.
+ChunkSchema.index({ visibility: 1 });
+
 export type ChunkDoc = InferSchemaType<typeof ChunkSchema>;
 export default mongoose.models.Chunk || mongoose.model("Chunk", ChunkSchema);
