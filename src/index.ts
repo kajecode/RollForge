@@ -64,6 +64,24 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 
 client.login(env.DISCORD_BOT_TOKEN);
 
-process.on("unhandledRejection", (reason, p) => {
-  logger.error(`Unhandled Rejection at: Promise ${p} reason: ${reason}`);
+function fatal(label: string, err: unknown) {
+  // Guard the logger itself: the Winston Discord transport can throw, and a
+  // throw from inside an unhandled-rejection/uncaught-exception handler loops.
+  try {
+    logger.error(`${label}: ${(err as any)?.message ?? String(err)}`, err as any);
+  } catch {
+    // Last resort — stderr is always safe.
+    // eslint-disable-next-line no-console
+    console.error(`${label}:`, err);
+  }
+  // Give logger transports a brief flush window, then let PM2 restart us.
+  setTimeout(() => process.exit(1), 500).unref();
+}
+
+process.on("unhandledRejection", (reason) => {
+  fatal("Unhandled Rejection", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  fatal("Uncaught Exception", err);
 });
