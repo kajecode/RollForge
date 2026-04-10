@@ -16,9 +16,15 @@
 //   ATLAS_COLLECTION     Collection name      (default: "chunks")
 //   ATLAS_API_HOST       Atlas API host       (default: "https://cloud.mongodb.com")
 //
+// Env vars are loaded from .env / .env.<NODE_ENV> / .env.local in that
+// order (last one wins, matching src/config/env.ts). So the four ATLAS_*
+// vars can live alongside the bot's other secrets in the normal .env
+// files — no separate config file needed.
+//
 // Exits 0 when every committed JSON matches the live definition; exits 1
 // on any drift or transport error. Intended for manual / pre-deploy use.
 
+import { config as loadDotenv } from "dotenv";
 import { createHash, randomBytes } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -27,6 +33,13 @@ import { fileURLToPath } from "node:url";
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const INDEX_DIR = path.join(REPO_ROOT, "infra", "atlas-search");
 const ATLAS_API_VERSION = "application/vnd.atlas.2024-05-30+json";
+
+// Load env files with the same precedence as src/config/env.ts so the
+// ATLAS_* vars can live in the existing .env / .env.local.
+const nodeEnv = process.env.NODE_ENV ?? "development";
+for (const file of [".env", `.env.${nodeEnv}`, ".env.local"]) {
+  loadDotenv({ path: path.resolve(REPO_ROOT, file), override: true });
+}
 
 function required(name) {
   const v = process.env[name];
