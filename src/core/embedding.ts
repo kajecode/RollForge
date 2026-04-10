@@ -27,20 +27,33 @@ async function withRetry<T>(fn: () => Promise<T>, tries = 4, baseMs = 300): Prom
 }
 
 /**
+ * Result of a batch embedding call. `vectors` preserves input order
+ * exactly, 1:1 with the texts argument. `tokens` is the sum of
+ * `usage.total_tokens` across every batch response from OpenAI — use
+ * this for cost accounting.
+ */
+export interface BatchEmbedResult {
+  vectors: number[][];
+  tokens: number;
+}
+
+/**
  * Batch embeddings to reduce round trips and respect token/throughput limits.
  * Preserves input order exactly.
  *
  * @param texts Full list of texts to embed
  * @param size  Batch size (64–128 recommended; default 64)
+ * @returns     { vectors, tokens } — see BatchEmbedResult for details
  */
-export async function batchEmbed(texts: string[], size = 64): Promise<number[][]> {
-  if (texts.length === 0) return [];
+export async function batchEmbed(texts: string[], size = 64): Promise<BatchEmbedResult> {
+  if (texts.length === 0) return { vectors: [], tokens: 0 };
   const batches: string[][] = [];
   for (let i = 0; i < texts.length; i += size) {
     batches.push(texts.slice(i, i + size));
   }
 
   const out: number[][] = new Array(texts.length);
+  let tokens = 0;
   let offset = 0;
 
   for (const batch of batches) {
@@ -52,7 +65,10 @@ export async function batchEmbed(texts: string[], size = 64): Promise<number[][]
     for (let i = 0; i < embeddings.length; i++) {
       out[offset + i] = embeddings[i];
     }
+    // OpenAI reports aggregate usage per request, not per input item.
+    // total_tokens is what the billing ledger uses.
+    tokens += vecs.usage?.total_tokens ?? 0;
     offset += batch.length;
   }
-  return out;
+  return { vectors: out, tokens };
 }
