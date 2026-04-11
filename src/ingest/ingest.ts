@@ -74,6 +74,19 @@ function sha256(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
+/**
+ * Extract a guildId from a relative path if it follows the guild-scoped
+ * layout added in issue #18: `guilds/<guildId>/…`. Returns null for legacy
+ * paths without that prefix. Used to decorate ingested chunks with a
+ * `guild:<id>` tag so cross-guild corpus isolation holds at the RAG layer.
+ */
+function guildIdFromPath(filePath: string): string | null {
+  const parts = filePath.split(path.sep);
+  const gIdx = parts.findIndex(p => p.toLowerCase() === "guilds");
+  if (gIdx >= 0 && parts[gIdx + 1]) return parts[gIdx + 1];
+  return null;
+}
+
 function tagsFromPath(filePath: string): string[] {
   const parts = filePath.split(path.sep);
   const tags: string[] = [];
@@ -81,6 +94,12 @@ function tagsFromPath(filePath: string): string[] {
   if (rIdx >= 0 && parts[rIdx+1]) tags.push(`region:${parts[rIdx+1].replace(/[-_]/g, " ")}`);
   const fIdx = parts.findIndex(p => p.toLowerCase() === "factions");
   if (fIdx >= 0 && parts[fIdx+1]) tags.push(`faction:${parts[fIdx+1].replace(/[-_]/g, " ")}`);
+  // Tag with the source guildId when the path has the #18 guild-scoped
+  // prefix. Downstream RAG queries can filter by this to keep cross-guild
+  // corpus isolated even when multiple guilds ingest into the same
+  // shared database.
+  const guildId = guildIdFromPath(filePath);
+  if (guildId) tags.push(`guild:${guildId}`);
   return tags;
 }
 
@@ -221,9 +240,22 @@ async function upsertPlain(absPath: string, relPath: string, opts: IngestOpts, s
   console.log(`Ingested: ${title} (${parts.length} chunks, ${tokens} tokens)`);
 }
 
+// Source prefix for Document entries created by /session recap
+// ingest:true. Those entries are not backed by a file on disk, so the
+// prune pass must leave them alone — otherwise `pnpm ingest --prune`
+// would delete every session's RAG entry on every run. The /session
+// forget subcommand (#19) handles their lifecycle separately.
+const SESSION_SOURCE_PREFIX = "session:";
+
+function isSessionSource(source: string | null | undefined): boolean {
+  return typeof source === "string" && source.startsWith(SESSION_SOURCE_PREFIX);
+}
+
 async function pruneMissing(campaignId: string, seenSources: Set<string>) {
   const toDelete = await Document.find({ campaignId }).lean();
-  const orphanDocs = toDelete.filter(d => d.source && !seenSources.has(d.source));
+  const orphanDocs = toDelete.filter(d =>
+    d.source && !seenSources.has(d.source) && !isSessionSource(d.source),
+  );
   if (!orphanDocs.length) return;
 
   const ids = orphanDocs.map(d => d._id);

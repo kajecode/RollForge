@@ -173,14 +173,20 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
       notes,
     });
 
-    const base = path.resolve(process.cwd(), "corpus", "regions", region ?? "Unknown");
+    // Scope shop markdown under the guild's own corpus subtree. Prior to
+    // issue #18, files went to `corpus/regions/<region>/<town - name>.md`
+    // with no guildId — two guilds with a "Stonemarket" in "Greywater"
+    // would silently overwrite each other on every ingest run.
+    const guildId = interaction.guildId!;
+    const relDir = path.join("corpus", "guilds", guildId, "regions", region ?? "Unknown");
+    const base = path.resolve(process.cwd(), relDir);
     await fs.mkdir(base, { recursive: true });
     const fileName = `${town ? `${town} - ` : ""}${shopName}.md`;
     const filePath = path.join(base, fileName);
     await fs.writeFile(filePath, md, "utf8");
 
     await Shop.findOneAndUpdate(
-      { guildId: interaction.guildId!, region: region ?? "", town, name: shopName },
+      { guildId, region: region ?? "", town, name: shopName },
       {
         $set: {
           type, district, blackmarket: isBlackmarket,
@@ -192,7 +198,7 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
       { upsert: true, new: true }
     );
 
-    embed.setFooter({ text: `${footerBase} • Saved: corpus/regions/${region ?? "Unknown"}/${fileName}` });
+    embed.setFooter({ text: `${footerBase} • Saved: ${path.posix.join(relDir.replace(/\\/g, "/"), fileName)}` });
   }
 
   await interaction.editReply({ embeds: [embed] });
