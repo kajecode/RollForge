@@ -119,9 +119,7 @@ describe("categoryWeight", () => {
   });
 
   it("maps 'armor' to 'heavy-armor'", () => {
-    expect(categoryWeight("armor", "middle")).toBe(
-      categoryWeight("heavy-armor", "middle")
-    );
+    expect(categoryWeight("armor", "middle")).toBe(categoryWeight("heavy-armor", "middle"));
   });
 
   it("returns 1 for unknown category", () => {
@@ -147,10 +145,16 @@ describe("availabilityWeight", () => {
   });
 
   it("applies availabilityBoost", () => {
-    const base = { rarity: "common", category: "gear", regions: [], blackmarketOnly: false, availabilityBoost: 0 };
+    const base = {
+      rarity: "common",
+      category: "gear",
+      regions: [],
+      blackmarketOnly: false,
+      availabilityBoost: 0,
+    };
     const boosted = { ...base, availabilityBoost: 2 };
     expect(availabilityWeight(boosted, "middle", null, false)).toBeGreaterThan(
-      availabilityWeight(base, "middle", null, false)
+      availabilityWeight(base, "middle", null, false),
     );
   });
 });

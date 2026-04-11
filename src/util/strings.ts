@@ -1,10 +1,13 @@
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-export const pluralize = (s: string) => s.endsWith("s") ? s : s + "s";
-export const truncate = (s: string, n: number) => s.length > n ? s.slice(0, n-3) + "..." : s;
+export const pluralize = (s: string) => (s.endsWith("s") ? s : s + "s");
+export const truncate = (s: string, n: number) => (s.length > n ? s.slice(0, n - 3) + "..." : s);
 
 // simple template replacement
-export function applyTemplate(tmpl: string, vars: Record<string,string|number|boolean|undefined|null>) {
-  return tmpl.replace(/\{\{(\w+?)\}\}/g, (_,key) => {
+export function applyTemplate(
+  tmpl: string,
+  vars: Record<string, string | number | boolean | undefined | null>,
+) {
+  return tmpl.replace(/\{\{(\w+?)\}\}/g, (_, key) => {
     const v = vars[key];
     return v != null ? String(v) : "";
   });
@@ -35,6 +38,6 @@ export function humanJoin(arr: string[], oxfordComma = true) {
 }
 
 // simple pluralization of a word based on count
-export function pluralizeCount(word: string, count: number, oxfordComma = true) {
+export function pluralizeCount(word: string, count: number) {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
 }

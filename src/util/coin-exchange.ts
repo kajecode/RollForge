@@ -94,7 +94,11 @@ export function formatPriceGP(gp: number, options: FormatOptions = {}): string {
   push(parts.gp, "gp");
   if (opts.useElectrum) push(parts.ep, "ep");
   // Optionally omit trailing "0 cp" noise
-  if (opts.omitTrailingZeroCp && parts.cp === 0 && (parts.gp > 0 || parts.sp > 0 || parts.pp > 0 || parts.ep > 0)) {
+  if (
+    opts.omitTrailingZeroCp &&
+    parts.cp === 0 &&
+    (parts.gp > 0 || parts.sp > 0 || parts.pp > 0 || parts.ep > 0)
+  ) {
     if (parts.sp > 0) push(parts.sp, "sp");
   } else {
     push(parts.sp, "sp");

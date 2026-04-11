@@ -57,9 +57,7 @@ describe("keywordSearch", () => {
     aggregateMock.mockResolvedValue([]);
     await keywordSearch("fireball", { visibility: ["public"] });
     const pipeline = aggregateMock.mock.calls[0][0];
-    const hasMatch = pipeline.some(
-      (s: any) => s.$match?.visibility?.$in?.includes("public"),
-    );
+    const hasMatch = pipeline.some((s: any) => s.$match?.visibility?.$in?.includes("public"));
     expect(hasMatch).toBe(true);
   });
 

@@ -60,7 +60,7 @@ export async function handleAutocomplete(interaction: AutocompleteInteraction) {
         .limit(25)
         .select("name")
         .lean<{ name: string }[]>();
-      choices = items.map(i => ({ name: i.name, value: i.name }));
+      choices = items.map((i) => ({ name: i.name, value: i.name }));
     }
 
     // region autocomplete (shop, shops, npc)
@@ -70,21 +70,21 @@ export async function handleAutocomplete(interaction: AutocompleteInteraction) {
         .limit(25)
         .select("name")
         .lean<{ name: string }[]>();
-      choices = regions.map(r => ({ name: r.name, value: r.name }));
+      choices = regions.map((r) => ({ name: r.name, value: r.name }));
     }
 
     // town autocomplete (shops list)
     else if (commandName === "shops" && focused.name === "town") {
-      const townsQuery = Shop.distinct(
-        "town",
-        {
-          guildId,
-          ...(prefix ? { town: prefix } : {}),
-        },
-      );
+      const townsQuery = Shop.distinct("town", {
+        guildId,
+        ...(prefix ? { town: prefix } : {}),
+      });
       // distinct() is an Aggregate-ish Query; .collation is still supported.
       const towns = (await (townsQuery as any).collation(CI_COLLATION)) as string[];
-      choices = towns.filter(Boolean).slice(0, 25).map(t => ({ name: t, value: t }));
+      choices = towns
+        .filter(Boolean)
+        .slice(0, 25)
+        .map((t) => ({ name: t, value: t }));
     }
 
     // shop name autocomplete (shop recall, shops show)
@@ -94,7 +94,7 @@ export async function handleAutocomplete(interaction: AutocompleteInteraction) {
         .limit(25)
         .select("name region")
         .lean<{ name: string; region: string }[]>();
-      choices = shops.map(s => ({
+      choices = shops.map((s) => ({
         name: s.region ? `${s.name} (${s.region})` : s.name,
         value: s.name,
       }));
@@ -107,7 +107,7 @@ export async function handleAutocomplete(interaction: AutocompleteInteraction) {
         .limit(25)
         .select("name region")
         .lean<{ name: string; region: string }[]>();
-      choices = npcs.map(n => ({
+      choices = npcs.map((n) => ({
         name: n.region ? `${n.name} (${n.region})` : n.name,
         value: n.name,
       }));
@@ -120,7 +120,7 @@ export async function handleAutocomplete(interaction: AutocompleteInteraction) {
         .limit(25)
         .select("name")
         .lean<{ name: string }[]>();
-      choices = shops.map(s => ({ name: s.name, value: s.name }));
+      choices = shops.map((s) => ({ name: s.name, value: s.name }));
     }
 
     // session title autocomplete
@@ -130,7 +130,7 @@ export async function handleAutocomplete(interaction: AutocompleteInteraction) {
         .limit(25)
         .select("title sessionDate")
         .lean<{ title: string; sessionDate: Date }[]>();
-      choices = sessions.map(s => ({
+      choices = sessions.map((s) => ({
         name: `${s.title} (${new Date(s.sessionDate).toLocaleDateString()})`,
         value: s.title,
       }));

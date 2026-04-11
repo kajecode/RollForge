@@ -12,9 +12,7 @@ describe("escapeRegex", () => {
   });
 
   it("escapes every regex metacharacter", () => {
-    expect(escapeRegex(".*+?^${}()|[]\\")).toBe(
-      "\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\",
-    );
+    expect(escapeRegex(".*+?^${}()|[]\\")).toBe("\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\");
   });
 
   it("defeats ReDoS-style nested quantifier payloads", () => {

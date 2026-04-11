@@ -14,7 +14,7 @@ import path from "node:path";
 
 function guildIdFromPath(filePath: string): string | null {
   const parts = filePath.split(path.sep);
-  const gIdx = parts.findIndex(p => p.toLowerCase() === "guilds");
+  const gIdx = parts.findIndex((p) => p.toLowerCase() === "guilds");
   if (gIdx >= 0 && parts[gIdx + 1]) return parts[gIdx + 1];
   return null;
 }
@@ -22,9 +22,9 @@ function guildIdFromPath(filePath: string): string | null {
 function tagsFromPath(filePath: string): string[] {
   const parts = filePath.split(path.sep);
   const tags: string[] = [];
-  const rIdx = parts.findIndex(p => p.toLowerCase() === "regions");
+  const rIdx = parts.findIndex((p) => p.toLowerCase() === "regions");
   if (rIdx >= 0 && parts[rIdx + 1]) tags.push(`region:${parts[rIdx + 1].replace(/[-_]/g, " ")}`);
-  const fIdx = parts.findIndex(p => p.toLowerCase() === "factions");
+  const fIdx = parts.findIndex((p) => p.toLowerCase() === "factions");
   if (fIdx >= 0 && parts[fIdx + 1]) tags.push(`faction:${parts[fIdx + 1].replace(/[-_]/g, " ")}`);
   const guildId = guildIdFromPath(filePath);
   if (guildId) tags.push(`guild:${guildId}`);
@@ -50,9 +50,7 @@ describe("guildIdFromPath (#18)", () => {
   });
 
   it("returns null for a legacy path without a guilds/ prefix", () => {
-    expect(
-      guildIdFromPath(p("corpus", "regions", "eryndor", "stonemarket.md")),
-    ).toBeNull();
+    expect(guildIdFromPath(p("corpus", "regions", "eryndor", "stonemarket.md"))).toBeNull();
   });
 
   it("returns null when `guilds` is the very last segment with no child", () => {
@@ -60,9 +58,7 @@ describe("guildIdFromPath (#18)", () => {
   });
 
   it("is case-insensitive on the `guilds` directory name", () => {
-    expect(
-      guildIdFromPath(p("corpus", "Guilds", "g1", "regions", "eryndor", "x.md")),
-    ).toBe("g1");
+    expect(guildIdFromPath(p("corpus", "Guilds", "g1", "regions", "eryndor", "x.md"))).toBe("g1");
   });
 });
 
@@ -78,7 +74,7 @@ describe("tagsFromPath (#18)", () => {
   it("omits guild: from legacy paths without the prefix", () => {
     const tags = tagsFromPath(p("corpus", "regions", "eryndor", "shop.md"));
     expect(tags).toContain("region:eryndor");
-    expect(tags.some(t => t.startsWith("guild:"))).toBe(false);
+    expect(tags.some((t) => t.startsWith("guild:"))).toBe(false);
   });
 
   it("preserves existing faction: tagging under a guild-scoped path", () => {

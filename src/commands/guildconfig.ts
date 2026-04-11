@@ -12,21 +12,24 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     const name = interaction.options.getString("name", true).toLowerCase();
     const min = interaction.options.getInteger("min", true);
     const max = interaction.options.getInteger("max", true);
-    const doc = await GuildConfig.findOneAndUpdate(
+    await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guildId! },
       { $set: { [`rarityOverrides.${name}`]: { min, max } } },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
     return interaction.editReply(`Set **${name}** to ${min}-${max} gp.`);
   }
 
   if (sub === "regions") {
     const txt = interaction.options.getString("regions", false) || "";
-    const arr = txt.split(",").map(s=>s.trim()).filter(Boolean);
+    const arr = txt
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const doc = await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guildId! },
       { $set: { allowedRegions: arr } },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
     return interaction.editReply(`Allowed regions: ${doc.allowedRegions.join(", ") || "(none)"}.`);
   }
@@ -44,7 +47,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     }
     const size = sizeRaw as "hamlet" | "village" | "town" | "city" | "metropolis";
 
-    const gpCap    = interaction.options.getInteger("gp_cap", true);
+    const gpCap = interaction.options.getInteger("gp_cap", true);
     const itemsMin = interaction.options.getInteger("items_min", true);
     const itemsMax = interaction.options.getInteger("items_max", true);
 
@@ -52,7 +55,9 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
       return interaction.editReply("Values must be non-negative.");
     }
     if (itemsMin > itemsMax) {
-      return interaction.editReply(`items_min (${itemsMin}) cannot exceed items_max (${itemsMax}).`);
+      return interaction.editReply(
+        `items_min (${itemsMin}) cannot exceed items_max (${itemsMax}).`,
+      );
     }
 
     await GuildConfig.findOneAndUpdate(
@@ -76,20 +81,24 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     if (gmRole) update.gmRoleId = gmRole.id;
     if (region) update.defaultRegion = region;
     if (playerChannels) {
-      const ids = playerChannels.split(",").map(s => s.trim()).filter(Boolean);
+      const ids = playerChannels
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       update.playerChannelIds = ids;
     }
 
     const doc = await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guildId! },
       { $set: update },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     const gmRoleText = doc.gmRoleId ? `<@&${doc.gmRoleId}>` : "(none)";
-    const chText = Array.isArray(doc.playerChannelIds) && doc.playerChannelIds.length
-      ? doc.playerChannelIds.map((id: string) => `<#${id}>`).join(", ")
-      : "(none)";
+    const chText =
+      Array.isArray(doc.playerChannelIds) && doc.playerChannelIds.length
+        ? doc.playerChannelIds.map((id: string) => `<#${id}>`).join(", ")
+        : "(none)";
 
     return interaction.editReply(
       [
@@ -97,8 +106,8 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
         `• Economy Multiplier: **${doc.economyMultiplier ?? "(unset)"}**`,
         `• GM Role: ${gmRoleText}`,
         `• Default Region: **${doc.defaultRegion ?? "(unset)"}**`,
-        `• Player Channels: ${chText}`
-      ].join("\n")
+        `• Player Channels: ${chText}`,
+      ].join("\n"),
     );
   }
 
@@ -109,24 +118,30 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     }
 
     const gmRoleText = doc.gmRoleId ? `<@&${doc.gmRoleId}>` : "(none)";
-    const chText = Array.isArray(doc.playerChannelIds) && doc.playerChannelIds.length
-      ? doc.playerChannelIds.map((id: string) => `<#${id}>`).join(", ")
-      : "(none)";
-    const regionsText = Array.isArray(doc.allowedRegions) && doc.allowedRegions.length
-      ? doc.allowedRegions.join(", ")
-      : "(none)";
+    const chText =
+      Array.isArray(doc.playerChannelIds) && doc.playerChannelIds.length
+        ? doc.playerChannelIds.map((id: string) => `<#${id}>`).join(", ")
+        : "(none)";
+    const regionsText =
+      Array.isArray(doc.allowedRegions) && doc.allowedRegions.length
+        ? doc.allowedRegions.join(", ")
+        : "(none)";
     const rarity = doc.rarityOverrides || {};
     const rarityLines = Object.keys(rarity).length
-      ? Object.entries(rarity).map(([k, v]: any) => `• ${k}: ${v.min}-${v.max} gp`).join("\n")
+      ? Object.entries(rarity)
+          .map(([k, v]: any) => `• ${k}: ${v.min}-${v.max} gp`)
+          .join("\n")
       : "(none set)";
 
-    return interaction.editReply([
-      "**Guild Configuration**",
-      `• Economy Multiplier: **${doc.economyMultiplier ?? 1}**`,
-      `• GM Role: ${gmRoleText}`,
-      `• Player Channels: ${chText}`,
-      `• Allowed Regions: ${regionsText}`,
-      `• Rarity Overrides:\n${rarityLines}`
-    ].join("\n"));
+    return interaction.editReply(
+      [
+        "**Guild Configuration**",
+        `• Economy Multiplier: **${doc.economyMultiplier ?? 1}**`,
+        `• GM Role: ${gmRoleText}`,
+        `• Player Channels: ${chText}`,
+        `• Allowed Regions: ${regionsText}`,
+        `• Rarity Overrides:\n${rarityLines}`,
+      ].join("\n"),
+    );
   }
 }

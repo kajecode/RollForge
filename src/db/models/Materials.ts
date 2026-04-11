@@ -9,11 +9,11 @@ const RegionalPriceSchema = new Schema(
       min: [0, "Multiplier must be >= 0"],
     },
     // Optional granular knobs if you want later:
-    localDiscount: { type: Number },      // e.g., 0.9
-    importMultiplier: { type: Number },   // e.g., 1.25
+    localDiscount: { type: Number }, // e.g., 0.9
+    importMultiplier: { type: Number }, // e.g., 1.25
     notes: { type: String },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const VariantSchema = new Schema(
@@ -23,7 +23,7 @@ const VariantSchema = new Schema(
     effect: { type: String },
     notes: { type: String },
   },
-  { _id: false }
+  { _id: false },
 );
 
 /**
@@ -40,7 +40,7 @@ const MaterialSchema = new Schema(
     name: { type: String, unique: true, required: true, trim: true },
     slug: { type: String, unique: true, required: true, lowercase: true, trim: true },
     regions: [{ type: Schema.Types.ObjectId, ref: "Region" }],
-    regionSlugs: { type: String , default: [] }, // optional denormalized for easier querying
+    regionSlugs: { type: String, default: [] }, // optional denormalized for easier querying
     // === NEW ===
     baseMultiplier: {
       type: Number,
@@ -82,7 +82,7 @@ const MaterialSchema = new Schema(
       // etc
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Useful indexes
@@ -90,6 +90,6 @@ MaterialSchema.index({ slug: 1 }, { unique: true });
 MaterialSchema.index({ name: 1 }, { unique: true });
 
 export type MaterialDoc = InferSchemaType<typeof MaterialSchema> & {
-    _id: Types.ObjectId;
+  _id: Types.ObjectId;
 };
 export default mongoose.models.Material || mongoose.model("Material", MaterialSchema);

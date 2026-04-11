@@ -78,22 +78,30 @@ describe("resolvePriceGP", () => {
     });
 
     it("prefers basePriceGP over rarity band when both present", async () => {
-      const result = await resolvePriceGP(item({ basePriceGP: 200, isMagic: true, rarity: "common" }));
+      const result = await resolvePriceGP(
+        item({ basePriceGP: 200, isMagic: true, rarity: "common" }),
+      );
       expect(result).toBe(200);
     });
   });
 
   describe("market tier multiplier", () => {
     it("applies no multiplier for middle market (default)", async () => {
-      expect(await resolvePriceGP(item({ basePriceGP: 100 }), null, { marketLevel: "middle" })).toBe(100);
+      expect(
+        await resolvePriceGP(item({ basePriceGP: 100 }), null, { marketLevel: "middle" }),
+      ).toBe(100);
     });
 
     it("applies 0.9x for low market", async () => {
-      expect(await resolvePriceGP(item({ basePriceGP: 100 }), null, { marketLevel: "low" })).toBe(90);
+      expect(await resolvePriceGP(item({ basePriceGP: 100 }), null, { marketLevel: "low" })).toBe(
+        90,
+      );
     });
 
     it("applies 1.25x for high market", async () => {
-      expect(await resolvePriceGP(item({ basePriceGP: 100 }), null, { marketLevel: "high" })).toBe(125);
+      expect(await resolvePriceGP(item({ basePriceGP: 100 }), null, { marketLevel: "high" })).toBe(
+        125,
+      );
     });
   });
 
@@ -118,33 +126,29 @@ describe("resolvePriceGP", () => {
 
   describe("blackmarket multiplier", () => {
     it("applies 1.75x for blackmarket", async () => {
-      const result = await resolvePriceGP(item({ basePriceGP: 100 }), null, { isBlackmarket: true });
+      const result = await resolvePriceGP(item({ basePriceGP: 100 }), null, {
+        isBlackmarket: true,
+      });
       expect(result).toBe(175);
     });
 
     it("does not apply blackmarket multiplier when false", async () => {
-      const result = await resolvePriceGP(item({ basePriceGP: 100 }), null, { isBlackmarket: false });
+      const result = await resolvePriceGP(item({ basePriceGP: 100 }), null, {
+        isBlackmarket: false,
+      });
       expect(result).toBe(100);
     });
 
     describe("split knobs (#17)", () => {
       it("uses blackmarketPriceMultiplier when set", async () => {
         const g = guild({ economy: { blackmarketPriceMultiplier: 2.5 } });
-        const result = await resolvePriceGP(
-          item({ basePriceGP: 100 }),
-          g,
-          { isBlackmarket: true },
-        );
+        const result = await resolvePriceGP(item({ basePriceGP: 100 }), g, { isBlackmarket: true });
         expect(result).toBe(250);
       });
 
       it("falls back to legacy blackmarketMultiplier when split knob is unset", async () => {
         const g = guild({ economy: { blackmarketMultiplier: 3 } });
-        const result = await resolvePriceGP(
-          item({ basePriceGP: 100 }),
-          g,
-          { isBlackmarket: true },
-        );
+        const result = await resolvePriceGP(item({ basePriceGP: 100 }), g, { isBlackmarket: true });
         expect(result).toBe(300);
       });
 
@@ -155,21 +159,15 @@ describe("resolvePriceGP", () => {
             blackmarketMultiplier: 10,
           },
         });
-        const result = await resolvePriceGP(
-          item({ basePriceGP: 100 }),
-          g,
-          { isBlackmarket: true },
-        );
+        const result = await resolvePriceGP(item({ basePriceGP: 100 }), g, { isBlackmarket: true });
         expect(result).toBe(200);
       });
 
       it("does not apply any multiplier when isBlackmarket is false", async () => {
         const g = guild({ economy: { blackmarketPriceMultiplier: 5 } });
-        const result = await resolvePriceGP(
-          item({ basePriceGP: 100 }),
-          g,
-          { isBlackmarket: false },
-        );
+        const result = await resolvePriceGP(item({ basePriceGP: 100 }), g, {
+          isBlackmarket: false,
+        });
         expect(result).toBe(100);
       });
     });
@@ -253,9 +251,7 @@ describe("resolvePriceGP", () => {
 
   describe("materialCache (issue #9)", () => {
     it("uses the cache and does NOT hit Materials.findOne when a hit is provided", async () => {
-      const cache = new Map<string, any>([
-        ["iron", { slug: "iron", baseMultiplier: 2 }],
-      ]);
+      const cache = new Map<string, any>([["iron", { slug: "iron", baseMultiplier: 2 }]]);
       const i = item({ basePriceGP: 100, material: "iron" });
       const result = await resolvePriceGP(i, null, { materialCache: cache });
       expect(result).toBe(200);
@@ -311,10 +307,7 @@ describe("resolvePriceGP", () => {
         lean: vi.fn().mockResolvedValue([{ slug: "iron", baseMultiplier: 1 }]),
       });
 
-      const cache = await buildMaterialCache([
-        { material: "iron" },
-        { material: "mythril" },
-      ]);
+      const cache = await buildMaterialCache([{ material: "iron" }, { material: "mythril" }]);
       expect(cache.has("mythril")).toBe(true);
       expect(cache.get("mythril")).toBeNull();
     });

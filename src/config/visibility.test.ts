@@ -105,9 +105,7 @@ describe("visibilityForInteraction", () => {
 describe("visibilityForMember", () => {
   it("grants gm when role matches", async () => {
     mockGetGuildConfig.mockResolvedValue({ gmRoleId: "gm-role" } as any);
-    const result = await visibilityForMember(
-      apiMember({ guildId: "g1", roles: ["gm-role"] }),
-    );
+    const result = await visibilityForMember(apiMember({ guildId: "g1", roles: ["gm-role"] }));
     expect(result).toEqual(["gm", "players", "public"]);
   });
 

@@ -2,7 +2,6 @@ import { config } from "dotenv";
 import { z } from "zod";
 import path from "path";
 
-
 // Load in order: .env, then .env.development, then .env.local (last one wins)
 const nodeEnv = process.env.NODE_ENV ?? "development";
 
@@ -23,7 +22,7 @@ const Env = z.object({
   OPENAI_API_KEY: z.string(),
   MODEL_TEXT: z.string().default("gpt-4o-mini"),
   MODEL_EMBED: z.string().default("text-embedding-3-large"),
-  EMBED_DIM: z.coerce.number().default(3072)
+  EMBED_DIM: z.coerce.number().default(3072),
 });
 
 export const env = Env.parse(process.env);

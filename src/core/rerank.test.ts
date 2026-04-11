@@ -1,9 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { rrfMerge } from "./rerank.js";
 
-const K = 60;
-function rrf(rank: number) { return 1 / (K + rank); }
-
 describe("rrfMerge", () => {
   it("returns payloads in descending RRF score order", () => {
     const vec = [
@@ -29,7 +26,10 @@ describe("rrfMerge", () => {
 
   it("respects the limit parameter", () => {
     const vec = Array.from({ length: 5 }, (_, i) => ({
-      id: String(i), score: 1, src: "vec" as const, payload: { i },
+      id: String(i),
+      score: 1,
+      src: "vec" as const,
+      payload: { i },
     }));
     const result = rrfMerge(vec, [], 3);
     expect(result).toHaveLength(3);
@@ -55,12 +55,12 @@ describe("rrfMerge", () => {
     // "shared" is ranked #3 in both; "solo" is ranked #1 in vec only
     const vec = [
       { id: "solo", score: 1, src: "vec" as const, payload: "solo" },
-      { id: "x",    score: 1, src: "vec" as const, payload: "x" },
+      { id: "x", score: 1, src: "vec" as const, payload: "x" },
       { id: "shared", score: 1, src: "vec" as const, payload: "shared" },
     ];
     const kw = [
-      { id: "y",    score: 1, src: "kw" as const, payload: "y" },
-      { id: "z",    score: 1, src: "kw" as const, payload: "z" },
+      { id: "y", score: 1, src: "kw" as const, payload: "y" },
+      { id: "z", score: 1, src: "kw" as const, payload: "z" },
       { id: "shared", score: 1, src: "kw" as const, payload: "shared" },
     ];
     // "shared" score = rrf(3) + rrf(3) = 2/(K+3); "solo" score = rrf(1) = 1/(K+1)
