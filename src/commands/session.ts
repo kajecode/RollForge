@@ -8,16 +8,50 @@ import { splitText } from "@/util/paginate";
 
 const SUMMARIZE_SYSTEM = `You are a campaign chronicler. Summarize session notes as a concise, evocative paragraph (3-5 sentences) in third-person narrative. Focus on key events, decisions, and outcomes.`;
 
+// Source prefix convention for session-derived Document entries. The
+// prune pass in src/ingest/ingest.ts explicitly skips entries whose
+// source starts with this prefix, since they are not backed by files
+// on disk — see issue #19.
+export const SESSION_SOURCE_PREFIX = "session:";
+
+function sessionSource(guildId: string, title: string): string {
+  return `${SESSION_SOURCE_PREFIX}${guildId}:${title}`;
+}
+
 async function ingestSummary(guildId: string, campaignId: string, title: string, summary: string) {
   const docTitle = `Session: ${title}`;
   const [vector] = await embed([summary]);
   const doc = await Document.findOneAndUpdate(
     { campaignId, title: docTitle },
-    { $set: { title: docTitle, type: "lore", campaignId, visibility: "gm", source: `session:${guildId}:${title}`, updatedAt: new Date() } },
+    { $set: { title: docTitle, type: "lore", campaignId, visibility: "gm", source: sessionSource(guildId, title), updatedAt: new Date() } },
     { upsert: true, new: true }
   );
   await Chunk.deleteMany({ documentId: doc._id });
   await Chunk.insertMany([{ documentId: doc._id, ord: 0, title: docTitle, text: summary, embedding: vector, visibility: "gm", tags: ["session"] }]);
+}
+
+/**
+ * Remove a session and every downstream artifact it created. Deletes the
+ * Session itself, the RAG Document created by /session recap ingest:true
+ * (if any), and every Chunk attached to that Document. Idempotent —
+ * missing pieces are simply skipped. See issue #19.
+ */
+async function forgetSession(guildId: string, campaignId: string, title: string) {
+  const source = sessionSource(guildId, title);
+  const docTitle = `Session: ${title}`;
+
+  // Find the RAG Document first so we can delete its chunks even if the
+  // Session row has already been removed.
+  const doc = await Document.findOne({ campaignId, title: docTitle, source }).lean() as any;
+  if (doc?._id) {
+    await Chunk.deleteMany({ documentId: doc._id });
+    await Document.deleteOne({ _id: doc._id });
+  }
+  const deleted = await Session.deleteOne({ guildId, campaignId, title });
+  return {
+    sessionDeleted: deleted.deletedCount > 0,
+    documentDeleted: !!doc?._id,
+  };
 }
 
 export default async function cmd(interaction: ChatInputCommandInteraction) {
@@ -79,6 +113,21 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply(parts[0]);
     for (const part of parts.slice(1)) await interaction.followUp(part);
+    return;
+  }
+
+  // ── forget ────────────────────────────────────────────────────────────────
+  if (sub === "forget") {
+    const title = interaction.options.getString("title", true);
+    const { sessionDeleted, documentDeleted } = await forgetSession(guildId, campaignId, title);
+    if (!sessionDeleted && !documentDeleted) {
+      await interaction.editReply(`No session or ingested doc found for **${title}**.`);
+      return;
+    }
+    const parts: string[] = [];
+    if (sessionDeleted) parts.push("session row");
+    if (documentDeleted) parts.push("ingested RAG doc + chunks");
+    await interaction.editReply(`Forgot **${title}** (removed: ${parts.join(", ")}).`);
     return;
   }
 

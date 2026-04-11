@@ -240,9 +240,22 @@ async function upsertPlain(absPath: string, relPath: string, opts: IngestOpts, s
   console.log(`Ingested: ${title} (${parts.length} chunks, ${tokens} tokens)`);
 }
 
+// Source prefix for Document entries created by /session recap
+// ingest:true. Those entries are not backed by a file on disk, so the
+// prune pass must leave them alone — otherwise `pnpm ingest --prune`
+// would delete every session's RAG entry on every run. The /session
+// forget subcommand (#19) handles their lifecycle separately.
+const SESSION_SOURCE_PREFIX = "session:";
+
+function isSessionSource(source: string | null | undefined): boolean {
+  return typeof source === "string" && source.startsWith(SESSION_SOURCE_PREFIX);
+}
+
 async function pruneMissing(campaignId: string, seenSources: Set<string>) {
   const toDelete = await Document.find({ campaignId }).lean();
-  const orphanDocs = toDelete.filter(d => d.source && !seenSources.has(d.source));
+  const orphanDocs = toDelete.filter(d =>
+    d.source && !seenSources.has(d.source) && !isSessionSource(d.source),
+  );
   if (!orphanDocs.length) return;
 
   const ids = orphanDocs.map(d => d._id);
