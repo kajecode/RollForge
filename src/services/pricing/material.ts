@@ -4,7 +4,11 @@ import type { GuildConfigDoc } from "@/db/models/GuildConfig";
 import Materials, { type MaterialDoc } from "@/db/models/Materials";
 import type { GuildConfigLean } from "@/services/guild";
 import { mapGet } from "@/util/mapLike";
-import { DEFAULT_IMPORT_MULTIPLIER, DEFAULT_LOCAL_DISCOUNT, DEFAULT_MATERIAL_MULTIPLIER } from "./types.js";
+import {
+  DEFAULT_IMPORT_MULTIPLIER,
+  DEFAULT_LOCAL_DISCOUNT,
+  DEFAULT_MATERIAL_MULTIPLIER,
+} from "./types.js";
 
 /**
  * Extract the material slug from an item, supporting both the legacy
@@ -12,7 +16,9 @@ import { DEFAULT_IMPORT_MULTIPLIER, DEFAULT_LOCAL_DISCOUNT, DEFAULT_MATERIAL_MUL
  * `item.materials: string[]` shape. Returns null when no material is
  * declared.
  */
-export function extractMaterialSlug(item: ItemDoc | { material?: string | null; materials?: unknown[] }): string | null {
+export function extractMaterialSlug(
+  item: ItemDoc | { material?: string | null; materials?: unknown[] },
+): string | null {
   const anyItem = item as any;
   if (typeof anyItem?.material === "string" && anyItem.material) return anyItem.material;
   if (Array.isArray(anyItem?.materials) && anyItem.materials.length > 0) {
@@ -103,7 +109,10 @@ export function resolveMaterialMultiplier(
 
   if (mat) {
     // 1) Material base
-    if (typeof (mat as any)?.baseMultiplier === "number" && Number.isFinite((mat as any).baseMultiplier)) {
+    if (
+      typeof (mat as any)?.baseMultiplier === "number" &&
+      Number.isFinite((mat as any).baseMultiplier)
+    ) {
       mult *= (mat as any).baseMultiplier;
     }
 
@@ -131,7 +140,9 @@ export function resolveMaterialMultiplier(
     // 3) Native-region fallback
     if (!appliedExplicitRegion && (regionSlug || regionId)) {
       const nativeIds: any[] = Array.isArray((mat as any).regions) ? (mat as any).regions : [];
-      const nativeSlugs: string[] = Array.isArray((mat as any).regionSlugs) ? (mat as any).regionSlugs : [];
+      const nativeSlugs: string[] = Array.isArray((mat as any).regionSlugs)
+        ? (mat as any).regionSlugs
+        : [];
 
       let isNative = false;
       if (regionId && nativeIds.length > 0) {
@@ -142,10 +153,14 @@ export function resolveMaterialMultiplier(
       }
 
       if (isNative) {
-        const localDisc = typeof eco.localDiscount === "number" ? eco.localDiscount : DEFAULT_LOCAL_DISCOUNT;
+        const localDisc =
+          typeof eco.localDiscount === "number" ? eco.localDiscount : DEFAULT_LOCAL_DISCOUNT;
         mult *= localDisc;
       } else if (nativeIds.length > 0 || nativeSlugs.length > 0) {
-        const importMult = typeof eco.importMultiplier === "number" ? eco.importMultiplier : DEFAULT_IMPORT_MULTIPLIER;
+        const importMult =
+          typeof eco.importMultiplier === "number"
+            ? eco.importMultiplier
+            : DEFAULT_IMPORT_MULTIPLIER;
         mult *= importMult;
       }
     }

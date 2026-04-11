@@ -11,10 +11,7 @@ import { rarityBandFor, type GuildConfigLean } from "@/services/guild";
  *   2. Magic-item rarity band midpoint (common/uncommon/rare/...)
  *      — skipped for artifact tier and non-magic items
  */
-export function resolveBasePrice(
-  item: ItemDoc,
-  guildCfg?: GuildConfigLean | null,
-): number | null {
+export function resolveBasePrice(item: ItemDoc, guildCfg?: GuildConfigLean | null): number | null {
   if (item.basePriceGP != null) {
     return Math.max(0, Number(item.basePriceGP));
   }

@@ -62,22 +62,12 @@ describe("resolveRegionMultiplier", () => {
   });
 
   it("supports string[] regions arrays (legacy shape)", () => {
-    const result = resolveRegionMultiplier(
-      item({ regions: ["eryndor"] }),
-      null,
-      "eryndor",
-      null,
-    );
+    const result = resolveRegionMultiplier(item({ regions: ["eryndor"] }), null, "eryndor", null);
     expect(result).toBe(DEFAULT_LOCAL_DISCOUNT);
   });
 
   it("does not mark as local when no matching region is declared", () => {
-    const result = resolveRegionMultiplier(
-      item({ regionSlugs: [] }),
-      null,
-      "eryndor",
-      null,
-    );
+    const result = resolveRegionMultiplier(item({ regionSlugs: [] }), null, "eryndor", null);
     expect(result).toBe(DEFAULT_IMPORT_MULTIPLIER);
   });
 });

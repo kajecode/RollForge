@@ -65,5 +65,7 @@ export function resolveRegionMultiplier(
   if (isLocal) {
     return typeof eco.localDiscount === "number" ? eco.localDiscount : DEFAULT_LOCAL_DISCOUNT;
   }
-  return typeof eco.importMultiplier === "number" ? eco.importMultiplier : DEFAULT_IMPORT_MULTIPLIER;
+  return typeof eco.importMultiplier === "number"
+    ? eco.importMultiplier
+    : DEFAULT_IMPORT_MULTIPLIER;
 }
