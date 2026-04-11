@@ -126,6 +126,53 @@ describe("resolvePriceGP", () => {
       const result = await resolvePriceGP(item({ basePriceGP: 100 }), null, { isBlackmarket: false });
       expect(result).toBe(100);
     });
+
+    describe("split knobs (#17)", () => {
+      it("uses blackmarketPriceMultiplier when set", async () => {
+        const g = guild({ economy: { blackmarketPriceMultiplier: 2.5 } });
+        const result = await resolvePriceGP(
+          item({ basePriceGP: 100 }),
+          g,
+          { isBlackmarket: true },
+        );
+        expect(result).toBe(250);
+      });
+
+      it("falls back to legacy blackmarketMultiplier when split knob is unset", async () => {
+        const g = guild({ economy: { blackmarketMultiplier: 3 } });
+        const result = await resolvePriceGP(
+          item({ basePriceGP: 100 }),
+          g,
+          { isBlackmarket: true },
+        );
+        expect(result).toBe(300);
+      });
+
+      it("prefers split knob over legacy knob when both are set", async () => {
+        const g = guild({
+          economy: {
+            blackmarketPriceMultiplier: 2,
+            blackmarketMultiplier: 10,
+          },
+        });
+        const result = await resolvePriceGP(
+          item({ basePriceGP: 100 }),
+          g,
+          { isBlackmarket: true },
+        );
+        expect(result).toBe(200);
+      });
+
+      it("does not apply any multiplier when isBlackmarket is false", async () => {
+        const g = guild({ economy: { blackmarketPriceMultiplier: 5 } });
+        const result = await resolvePriceGP(
+          item({ basePriceGP: 100 }),
+          g,
+          { isBlackmarket: false },
+        );
+        expect(result).toBe(100);
+      });
+    });
   });
 
   describe("material multiplier", () => {

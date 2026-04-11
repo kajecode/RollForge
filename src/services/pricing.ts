@@ -282,12 +282,25 @@ export async function resolvePriceGP(
       materialMult = resolveMaterialMultiplier(matDoc, materialSlug, activeRegionSlug, guildCfg, ctx?.regionId ?? null);
     }
 
-    // 5) Blackmarket
+    // 5) Blackmarket price multiplier.
+    //
+    // Precedence: blackmarketPriceMultiplier (split knob, #17)
+    //          -> blackmarketMultiplier (legacy combined knob)
+    //          -> DEFAULT_BLACKMARKET_MULTIPLIER
+    //
+    // Note: this is ONLY the price side. The availability side is
+    // handled separately in src/commands/_helpers/weights.ts ->
+    // blackmarketBoost(). Changing the price knob here does NOT change
+    // how often black-market items appear in shop rolls, and vice
+    // versa. Keep the two synchronized in documentation and guild
+    // config UX, but functionally they are now independent.
     const blackmarketMult =
       ctx?.isBlackmarket
-        ? (typeof eco.blackmarketMultiplier === "number"
-            ? eco.blackmarketMultiplier
-            : DEFAULT_BLACKMARKET_MULTIPLIER)
+        ? (typeof eco.blackmarketPriceMultiplier === "number"
+            ? eco.blackmarketPriceMultiplier
+            : typeof eco.blackmarketMultiplier === "number"
+              ? eco.blackmarketMultiplier
+              : DEFAULT_BLACKMARKET_MULTIPLIER)
         : 1.0;
 
     // Combine all pre-economy adjustments

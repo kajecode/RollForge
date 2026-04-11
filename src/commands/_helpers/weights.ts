@@ -27,9 +27,38 @@ export function regionBoost(itemRegions: string[], targetRegion?: string | null)
   return hit ? 1.6 : 1.0; // local goods more likely
 }
 
-export function blackmarketBoost(isBlackmarket: boolean, item: any) {
+/**
+ * Availability multiplier for whether a given item appears in a black
+ * market pool vs a normal one. This is strictly the AVAILABILITY side
+ * of the black-market effect — the PRICE side is handled separately
+ * in src/services/pricing.ts -> blackmarket multiplier. The two used
+ * to be implicitly coupled via a single `economy.blackmarketMultiplier`
+ * field; they are now independently configurable via
+ * `economy.blackmarketAvailabilityMultiplier` (this function) and
+ * `economy.blackmarketPriceMultiplier` (pricing.ts). See issue #17.
+ *
+ * Precedence for the optional guild scale factor:
+ *   blackmarketAvailabilityMultiplier (split knob)
+ *   -> blackmarketMultiplier (legacy combined knob)
+ *   -> 1.0 (no-op)
+ */
+export function blackmarketBoost(
+  isBlackmarket: boolean,
+  item: any,
+  cfg?: GuildConfigDoc | null,
+) {
+  const eco: any = cfg?.economy ?? {};
+  // Scale factor from guild config. Applied to the *blackmarket-present*
+  // branch only — the "penalize on open market" numbers are kept stable.
+  const guildScale =
+    typeof eco.blackmarketAvailabilityMultiplier === "number"
+      ? eco.blackmarketAvailabilityMultiplier
+      : typeof eco.blackmarketMultiplier === "number"
+        ? eco.blackmarketMultiplier
+        : 1.0;
+
   if (!isBlackmarket) {
-    // penalize illicit-only or very rare stuff
+    // penalize illicit-only or very rare stuff on the open market
     if (item.blackmarketOnly) return 0.05;
     if (["very rare","legendary","artifact"].includes(item.rarity)) return 0.3;
     return 1;
@@ -37,7 +66,7 @@ export function blackmarketBoost(isBlackmarket: boolean, item: any) {
   // blackmarket favors illicit and high rarity
   let mult = 1.2 + (["rare","very rare","legendary","artifact"].indexOf(item.rarity) >= 0 ? 0.6 : 0);
   if (item.blackmarketOnly) mult += 0.8;
-  return mult;
+  return mult * guildScale;
 }
 
 // Final weight
@@ -45,7 +74,7 @@ export function availabilityWeight(item: any, marketLevel: MarketLevel, region: 
   const rw = rarityWeight(item.rarity, marketLevel, cfg);
   const cw = categoryWeight(item.category, marketLevel, cfg);
   const reg = regionBoost(item.regions, region);
-  const bm  = blackmarketBoost(isBlackmarket, item);
+  const bm  = blackmarketBoost(isBlackmarket, item, cfg);
   const boost = 1 + (Number(item.availabilityBoost) || 0) * 0.15; // small nudge per item
 
   return rw * cw * reg * bm * boost;
