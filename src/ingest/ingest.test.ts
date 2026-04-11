@@ -31,6 +31,14 @@ function tagsFromPath(filePath: string): string[] {
   return tags;
 }
 
+// Mirror of SESSION_SOURCE_PREFIX in src/ingest/ingest.ts. If the
+// constant there ever changes, update this literal too.
+const SESSION_SOURCE_PREFIX = "session:";
+
+function isSessionSource(source: string | null | undefined): boolean {
+  return typeof source === "string" && source.startsWith(SESSION_SOURCE_PREFIX);
+}
+
 const sep = path.sep;
 const p = (...parts: string[]) => parts.join(sep);
 
@@ -79,5 +87,36 @@ describe("tagsFromPath (#18)", () => {
     );
     expect(tags).toContain("guild:g1");
     expect(tags).toContain("faction:moonshadow guild");
+  });
+});
+
+describe("isSessionSource (#19)", () => {
+  // Replicates the filter predicate used in pruneMissing() to keep
+  // session-derived Documents out of the prune pass.
+  function shouldPrune(source: string | null | undefined, seenSources: Set<string>): boolean {
+    return !!source && !seenSources.has(source) && !isSessionSource(source);
+  }
+
+  it("matches the session: prefix", () => {
+    expect(isSessionSource("session:g1:Session 12")).toBe(true);
+    expect(isSessionSource("session:anything")).toBe(true);
+  });
+
+  it("does not match file-based sources", () => {
+    expect(isSessionSource("regions/eryndor/shop.md")).toBe(false);
+    expect(isSessionSource("guilds/g1/regions/eryndor/shop.md")).toBe(false);
+    expect(isSessionSource(null)).toBe(false);
+    expect(isSessionSource(undefined)).toBe(false);
+    expect(isSessionSource("")).toBe(false);
+  });
+
+  it("pruneMissing's filter keeps session-derived docs off the delete list", () => {
+    const seen = new Set<string>(["regions/eryndor/shop.md"]);
+    // File that was deleted from disk → prune
+    expect(shouldPrune("regions/eryndor/old-shop.md", seen)).toBe(true);
+    // File that is still present → keep
+    expect(shouldPrune("regions/eryndor/shop.md", seen)).toBe(false);
+    // Session doc → keep regardless of seen set
+    expect(shouldPrune("session:g1:Session 12", seen)).toBe(false);
   });
 });

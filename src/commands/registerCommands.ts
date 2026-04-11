@@ -91,6 +91,9 @@ const cmds = [
       .addBooleanOption(o => o.setName("ingest").setDescription("Add summary to the RAG corpus for /rule queries"))
       .addStringOption(o => o.setName("campaign").setDescription("Campaign ID (default: default)")))
     .addSubcommand(sc => sc.setName("list").setDescription("List recent sessions")
+      .addStringOption(o => o.setName("campaign").setDescription("Campaign ID (default: default)")))
+    .addSubcommand(sc => sc.setName("forget").setDescription("Remove a session + its ingested RAG doc")
+      .addStringOption(o => o.setName("title").setDescription("Session title to remove").setRequired(true).setAutocomplete(true))
       .addStringOption(o => o.setName("campaign").setDescription("Campaign ID (default: default)"))),
   new SlashCommandBuilder().setName("price").setDescription("Price an item")
     .addStringOption(o => o.setName("item").setDescription("e.g., longbow").setRequired(true).setAutocomplete(true))
