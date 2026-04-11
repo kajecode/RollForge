@@ -16,7 +16,10 @@ export function rarityBandFor(guild: GuildConfigLean | null | undefined, rarity:
   return override ?? MAGIC_PRICE_BY_RARITY[key] ?? null;
 }
 
-export function applyEconomy(price: number | null | undefined, guild: GuildConfigLean | null | undefined) {
+export function applyEconomy(
+  price: number | null | undefined,
+  guild: GuildConfigLean | null | undefined,
+) {
   if (price == null) return price as any;
   const mult = Number(guild?.economyMultiplier || 1);
   const adjusted = price * mult;

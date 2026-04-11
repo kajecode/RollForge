@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
 declare namespace NodeJS {
   interface ProcessEnv {
     DISCORD_BOT_TOKEN: string;

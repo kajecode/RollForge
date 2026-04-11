@@ -6,15 +6,34 @@ import Item from "@/db/models/Items";
 import { toSlug } from "@/util/slug";
 
 type Row = {
-  name: string; category?: string; rarity?: string; is_magic?: string;
-  base_price_gp?: string; source?: string; tags?: string; notes?: string;
-  regions?: string; materials?: string; blackmarket_only?: string; availability_boost?: string;
+  name: string;
+  category?: string;
+  rarity?: string;
+  is_magic?: string;
+  base_price_gp?: string;
+  source?: string;
+  tags?: string;
+  notes?: string;
+  regions?: string;
+  materials?: string;
+  blackmarket_only?: string;
+  availability_boost?: string;
 };
 
-function splitCSVList(v?: string) { return (v||"").split(",").map(s=>s.trim()).filter(Boolean); }
+function splitCSVList(v?: string) {
+  return (v || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
-function toBool(v?: string) { return /^true|1|yes$/i.test(v ?? ""); }
-function toNum(v?: string) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+function toBool(v?: string) {
+  return /^true|1|yes$/i.test(v ?? "");
+}
+function toNum(v?: string) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
 async function importCsv(filePath: string) {
   await connectMongo();
@@ -33,10 +52,12 @@ async function importCsv(filePath: string) {
 
           const slug = toSlug(name);
           const tags = (r.tags || "")
-            .split(",").map(t => t.trim()).filter(Boolean);
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean);
 
           const doc = {
-            name, 
+            name,
             slug,
             category: (r.category || "gear").toLowerCase(),
             rarity: ((r.rarity || "none") as any).toLowerCase(),
@@ -46,14 +67,14 @@ async function importCsv(filePath: string) {
             tags,
             source: r.source || "csv",
             notes: r.notes || "",
-            regions: splitCSVList(r.regions),                  // NEW
-            materials: splitCSVList(r.materials),              // NEW
-            blackmarketOnly: toBool(r.blackmarket_only),       // NEW
-            availabilityBoost: Number(r.availability_boost ?? 0) || 0 // NEW
+            regions: splitCSVList(r.regions), // NEW
+            materials: splitCSVList(r.materials), // NEW
+            blackmarketOnly: toBool(r.blackmarket_only), // NEW
+            availabilityBoost: Number(r.availability_boost ?? 0) || 0, // NEW
           };
 
           await Item.findOneAndUpdate({ slug }, { $set: doc }, { upsert: true, new: true });
-          // eslint-disable-next-line no-console
+
           console.log(`Upserted: ${name} (${doc.basePriceGP ?? "[rarity-priced]"})`);
         }
         resolve();
@@ -62,4 +83,9 @@ async function importCsv(filePath: string) {
 }
 
 const file = process.argv[2] || path.join(process.cwd(), "data/items.csv");
-importCsv(file).then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1);});
+importCsv(file)
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

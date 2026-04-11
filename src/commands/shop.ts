@@ -8,17 +8,25 @@ import path from "node:path";
 import Shop from "@/db/models/Shop";
 import { renderShopMarkdown } from "./_helpers/shopMarkdown";
 import Regions from "@/db/models/Regions";
-import logger, { loggerForInteraction } from "@/services/logger";
+import { loggerForInteraction } from "@/services/logger";
 import { formatPriceGP } from "@/util/coin-exchange";
 import { fieldChunks } from "@/util/paginate";
 
 function parseSpecial(s?: string) {
   if (!s) return null;
   const m = s.match(/^(.*?)\s+—\s+(.*?)\s+\((\d+)\s*gp\)$/i);
-  return m ? { name: m[1].trim(), description: m[2].trim(), priceGP: Number(m[3]) } : { name: s.trim() };
+  return m
+    ? { name: m[1].trim(), description: m[2].trim(), priceGP: Number(m[3]) }
+    : { name: s.trim() };
 }
 
-function renderItemLine(name: string, price: number | null | undefined, rarity: string, isMagic: boolean, isBlackmarketOnly: boolean): string {
+function renderItemLine(
+  name: string,
+  price: number | null | undefined,
+  rarity: string,
+  isMagic: boolean,
+  isBlackmarketOnly: boolean,
+): string {
   return `• ${name}${isMagic ? " ✨" : ""}${isBlackmarketOnly ? " 🕵" : ""} — **${price != null ? formatPriceGP(price, { compact: true, showFree: true }) : "—"}** (${rarity})`;
 }
 
@@ -41,7 +49,11 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
 
   const guildCfg = await getGuildConfig(interaction.guildId!);
-  const region = regionInput ?? (guildCfg?.defaultRegionTag?.startsWith("region:") ? guildCfg.defaultRegionTag.split(":")[1] : null);
+  const region =
+    regionInput ??
+    (guildCfg?.defaultRegionTag?.startsWith("region:")
+      ? guildCfg.defaultRegionTag.split(":")[1]
+      : null);
 
   if (region) {
     const exists = await Regions.exists({ name: region });
@@ -50,7 +62,11 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
       return;
     }
   }
-  if (region && (guildCfg?.allowedRegions?.length ?? 0) > 0 && !guildCfg!.allowedRegions!.some(r => r.toLowerCase() === region.toLowerCase())) {
+  if (
+    region &&
+    (guildCfg?.allowedRegions?.length ?? 0) > 0 &&
+    !guildCfg!.allowedRegions!.some((r) => r.toLowerCase() === region.toLowerCase())
+  ) {
     await interaction.editReply(`Region **${region}** is not in allowedRegions for this guild.`);
     return;
   }
@@ -60,33 +76,44 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
 
   // Load saved shop if name provided and not forcing a refresh
   if (shopName && !refresh && !save) {
-    const saved = await Shop.findOne({
+    const saved = (await Shop.findOne({
       guildId: interaction.guildId!,
       name: shopName,
       ...(region ? { region } : {}),
       ...(town ? { town } : {}),
-    }).lean() as any;
+    }).lean()) as any;
 
     if (saved) {
       const footerParts = [
-        guildCfg?.economyMultiplier && guildCfg.economyMultiplier !== 1 ? `Economy x${guildCfg.economyMultiplier}` : null,
+        guildCfg?.economyMultiplier && guildCfg.economyMultiplier !== 1
+          ? `Economy x${guildCfg.economyMultiplier}`
+          : null,
         `Last stocked: ${new Date(saved.updatedAt).toLocaleDateString()}`,
         "Use refresh:true to regenerate",
-      ].filter(Boolean).join(" • ");
+      ]
+        .filter(Boolean)
+        .join(" • ");
 
       const embed = new EmbedBuilder()
         .setTitle(saved.name)
-        .setDescription([
-          saved.proprietor ? `Proprietor: **${saved.proprietor}**` : null,
-          saved.region ? `Region: **${saved.region}**` : null,
-          `District: **${saved.district ?? district}**`,
-          saved.blackmarket ? "Blackmarket: **Yes**" : null,
-        ].filter(Boolean).join(" | "))
+        .setDescription(
+          [
+            saved.proprietor ? `Proprietor: **${saved.proprietor}**` : null,
+            saved.region ? `Region: **${saved.region}**` : null,
+            `District: **${saved.district ?? district}**`,
+            saved.blackmarket ? "Blackmarket: **Yes**" : null,
+          ]
+            .filter(Boolean)
+            .join(" | "),
+        )
         .addFields(
           saved.inventory?.length
-            ? fieldChunks(saved.inventory.map((s: any) => renderItemLine(s.name, s.priceGP, s.rarity, !!s.isMagic, false)))
-                .map((v, i) => ({ name: i === 0 ? "Stock" : "Stock (cont.)", value: v }))
-            : [{ name: "Stock", value: "_(none)_" }]
+            ? fieldChunks(
+                saved.inventory.map((s: any) =>
+                  renderItemLine(s.name, s.priceGP, s.rarity, !!s.isMagic, false),
+                ),
+              ).map((v, i) => ({ name: i === 0 ? "Stock" : "Stock (cont.)", value: v }))
+            : [{ name: "Stock", value: "_(none)_" }],
         )
         .setFooter({ text: footerParts });
 
@@ -122,41 +149,58 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
     throw err;
   }
 
-  const footerBase = guildCfg?.economyMultiplier && guildCfg.economyMultiplier !== 1
-    ? `Economy x${guildCfg.economyMultiplier}`
-    : "SRD/House pricing";
+  const footerBase =
+    guildCfg?.economyMultiplier && guildCfg.economyMultiplier !== 1
+      ? `Economy x${guildCfg.economyMultiplier}`
+      : "SRD/House pricing";
 
   const embed = new EmbedBuilder()
     .setTitle(shopName ?? `${type[0].toUpperCase()}${type.slice(1)} Shop`)
-    .setDescription([
-      region ? `Region: **${region}**` : null,
-      `District: **${district}**`,
-      `Size: **${settlementSize}** (per-item cap **${gpCap} gp**)`,
-      isBlackmarket ? "Blackmarket: **Yes**" : null,
-    ].filter(Boolean).join(" | "))
+    .setDescription(
+      [
+        region ? `Region: **${region}**` : null,
+        `District: **${district}**`,
+        `Size: **${settlementSize}** (per-item cap **${gpCap} gp**)`,
+        isBlackmarket ? "Blackmarket: **Yes**" : null,
+      ]
+        .filter(Boolean)
+        .join(" | "),
+    )
     .addFields(
       chosen.length
-        ? fieldChunks(chosen.map(p => renderItemLine(p.it.name, p.price, p.it.rarity, !!p.it.isMagic, !!p.it.blackmarketOnly)))
-            .map((v, i) => ({ name: i === 0 ? "Stock" : "Stock (cont.)", value: v }))
-        : [{ name: "Stock", value: "_(none)_" }]
+        ? fieldChunks(
+            chosen.map((p) =>
+              renderItemLine(
+                p.it.name,
+                p.price,
+                p.it.rarity,
+                !!p.it.isMagic,
+                !!p.it.blackmarketOnly,
+              ),
+            ),
+          ).map((v, i) => ({ name: i === 0 ? "Stock" : "Stock (cont.)", value: v }))
+        : [{ name: "Stock", value: "_(none)_" }],
     )
     .setFooter({ text: footerBase });
 
   if (save) {
     if (!shopName) {
-      await interaction.editReply("To save, provide a **name** (shop title)."); return;
+      await interaction.editReply("To save, provide a **name** (shop title).");
+      return;
     }
     const locationInTown = interaction.options.getString("location") || "";
     const proprietor = interaction.options.getString("proprietor") || "";
     const specialties = (interaction.options.getString("specialties") || "")
-      .split(",").map(s => s.trim()).filter(Boolean);
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const notes = interaction.options.getString("notes") || "";
     const specialItems = [
       parseSpecial(interaction.options.getString("special1") || undefined),
       parseSpecial(interaction.options.getString("special2") || undefined),
     ].filter(Boolean) as any[];
 
-    const inv = chosen.map(p => ({
+    const inv = chosen.map((p) => ({
       name: p.it.name,
       priceGP: p.price!,
       rarity: p.it.rarity,
@@ -166,8 +210,12 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
 
     const md = renderShopMarkdown({
       region: region ?? "",
-      town, name: shopName, type,
-      locationInTown, proprietor, specialties,
+      town,
+      name: shopName,
+      type,
+      locationInTown,
+      proprietor,
+      specialties,
       inventory: inv,
       specialItems,
       notes,
@@ -189,16 +237,25 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
       { guildId, region: region ?? "", town, name: shopName },
       {
         $set: {
-          type, district, blackmarket: isBlackmarket,
-          locationInTown, proprietor, specialties,
-          inventory: inv, specialItems: [],
-          notes, markdownPath: path.relative(process.cwd(), filePath), markdown: md,
+          type,
+          district,
+          blackmarket: isBlackmarket,
+          locationInTown,
+          proprietor,
+          specialties,
+          inventory: inv,
+          specialItems: [],
+          notes,
+          markdownPath: path.relative(process.cwd(), filePath),
+          markdown: md,
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
-    embed.setFooter({ text: `${footerBase} • Saved: ${path.posix.join(relDir.replace(/\\/g, "/"), fileName)}` });
+    embed.setFooter({
+      text: `${footerBase} • Saved: ${path.posix.join(relDir.replace(/\\/g, "/"), fileName)}`,
+    });
   }
 
   await interaction.editReply({ embeds: [embed] });

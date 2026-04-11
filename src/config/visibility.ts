@@ -27,12 +27,16 @@ export type Visibility = "gm" | "players" | "public";
 
 function memberHasRole(
   member: GuildMember | APIInteractionGuildMember | null,
-  roleId?: string
+  roleId?: string,
 ): boolean {
   if (!member || !roleId) return false;
 
   // GuildMember: roles is a RoleManager with .cache.has()
-  if ("roles" in member && (member as GuildMember).roles && "cache" in (member as GuildMember).roles) {
+  if (
+    "roles" in member &&
+    (member as GuildMember).roles &&
+    "cache" in (member as GuildMember).roles
+  ) {
     return (member as GuildMember).roles.cache.has(roleId);
   }
 
@@ -53,7 +57,10 @@ function memberHasManageGuild(member: GuildMember | APIInteractionGuildMember | 
   }
 
   // APIInteractionGuildMember: permissions is a **string** bitfield → convert to bigint
-  if ("permissions" in member && typeof (member as APIInteractionGuildMember).permissions === "string") {
+  if (
+    "permissions" in member &&
+    typeof (member as APIInteractionGuildMember).permissions === "string"
+  ) {
     const bits = new PermissionsBitField(BigInt((member as APIInteractionGuildMember).permissions));
     return bits.has(PermissionFlagsBits.ManageGuild);
   }
@@ -63,10 +70,9 @@ function memberHasManageGuild(member: GuildMember | APIInteractionGuildMember | 
 
 export async function visibilityForInteraction(
   member: GuildMember | APIInteractionGuildMember | null,
-  channelId: string
+  channelId: string,
 ): Promise<Visibility[]> {
-  const guildId =
-    member && "guild" in member ? (member as GuildMember).guild?.id : undefined;
+  const guildId = member && "guild" in member ? (member as GuildMember).guild?.id : undefined;
 
   const cfg: GuildConfigLean | null = await safeGuildConfig(guildId);
 
@@ -76,8 +82,7 @@ export async function visibilityForInteraction(
   }
 
   // GM role or ManageGuild permission grants full visibility
-  const isGM =
-    memberHasRole(member, (cfg?.gmRoleId ?? undefined)) || memberHasManageGuild(member);
+  const isGM = memberHasRole(member, cfg?.gmRoleId ?? undefined) || memberHasManageGuild(member);
 
   return isGM ? ["gm", "players", "public"] : ["players", "public"];
 }
@@ -87,15 +92,13 @@ export async function visibilityForInteraction(
  * (No player-channel restriction; just GM vs player.)
  */
 export async function visibilityForMember(
-  member: GuildMember | APIInteractionGuildMember | null
+  member: GuildMember | APIInteractionGuildMember | null,
 ): Promise<Visibility[]> {
-  const guildId =
-    member && "guild" in member ? (member as GuildMember).guild?.id : undefined;
+  const guildId = member && "guild" in member ? (member as GuildMember).guild?.id : undefined;
 
   const cfg: GuildConfigLean | null = await safeGuildConfig(guildId);
 
-  const isGM =
-    memberHasRole(member, (cfg?.gmRoleId ?? undefined)) || memberHasManageGuild(member);
+  const isGM = memberHasRole(member, cfg?.gmRoleId ?? undefined) || memberHasManageGuild(member);
 
   return isGM ? ["gm", "players", "public"] : ["players", "public"];
 }

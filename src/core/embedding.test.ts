@@ -35,9 +35,7 @@ describe("batchEmbed", () => {
   });
 
   it("preserves input order across a single batch", async () => {
-    embeddingsCreate.mockResolvedValue(
-      fakeEmbeddingsResponse([[0.1], [0.2], [0.3]], 12),
-    );
+    embeddingsCreate.mockResolvedValue(fakeEmbeddingsResponse([[0.1], [0.2], [0.3]], 12));
     const result = await batchEmbed(["a", "b", "c"]);
     expect(result.vectors).toEqual([[0.1], [0.2], [0.3]]);
     expect(result.tokens).toBe(12);

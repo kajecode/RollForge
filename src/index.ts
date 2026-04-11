@@ -1,10 +1,7 @@
 import { Client, GatewayIntentBits, Interaction } from "discord.js";
 import { handleAutocomplete } from "@/commands/autocomplete";
 import { handleFeedback } from "@/commands/handleFeedback";
-import { 
-  env,
-  connectMongo,
-} from "@/config";
+import { env, connectMongo } from "@/config";
 
 import rule from "@/commands/rule";
 import roll from "@/commands/roll";
@@ -22,7 +19,7 @@ import { startHistoryPruner } from "@/core/conversationHistory";
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once("clientReady", async () => {
-  initLogger(client);                // attach Discord transport
+  initLogger(client); // attach Discord transport
   logger.info(`Logged in as ${client.user?.tag}`);
   await connectMongo();
   logger.info("Mongo connected");
@@ -51,16 +48,35 @@ client.on("interactionCreate", async (interaction: Interaction) => {
   if (!interaction.isChatInputCommand()) return;
   try {
     switch (interaction.commandName) {
-      case "guildconfig": await guildconfig(interaction); break;
-      case "rule": await rule(interaction); break;
-      case "roll": await roll(interaction); break;
-      case "npc": await npc(interaction); break;
-      case "scene": await scene(interaction); break;
-      case "shop": await shop(interaction); break;
-      case "price": await price(interaction); break;
-      case "shops": await shops(interaction); break;
-      case "session": await session(interaction); break;
-      default: await interaction.reply({ ...EPHEMERAL_REPLY, content: "Unknown command." });
+      case "guildconfig":
+        await guildconfig(interaction);
+        break;
+      case "rule":
+        await rule(interaction);
+        break;
+      case "roll":
+        await roll(interaction);
+        break;
+      case "npc":
+        await npc(interaction);
+        break;
+      case "scene":
+        await scene(interaction);
+        break;
+      case "shop":
+        await shop(interaction);
+        break;
+      case "price":
+        await price(interaction);
+        break;
+      case "shops":
+        await shops(interaction);
+        break;
+      case "session":
+        await session(interaction);
+        break;
+      default:
+        await interaction.reply({ ...EPHEMERAL_REPLY, content: "Unknown command." });
     }
   } catch (err: any) {
     logger.error(`Command ${interaction.commandName} failed: ${err?.message}`, err);
@@ -86,7 +102,7 @@ function fatal(label: string, err: unknown) {
     logger.error(`${label}: ${(err as any)?.message ?? String(err)}`, err as any);
   } catch {
     // Last resort — stderr is always safe.
-    // eslint-disable-next-line no-console
+
     console.error(`${label}:`, err);
   }
   // Give logger transports a brief flush window, then let PM2 restart us.

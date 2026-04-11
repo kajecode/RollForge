@@ -1,0 +1,10 @@
+dist
+node_modules
+corpus
+dump
+migrations
+infra
+coverage
+pnpm-lock.yaml
+.claude
+*.md

@@ -91,7 +91,12 @@ async function digestFetch(url, { user, password, accept }) {
   const method = "GET";
   const cnonce = randomBytes(8).toString("hex");
   const nc = "00000001";
-  const qop = challenge.qop?.split(",").map((s) => s.trim()).includes("auth") ? "auth" : challenge.qop;
+  const qop = challenge.qop
+    ?.split(",")
+    .map((s) => s.trim())
+    .includes("auth")
+    ? "auth"
+    : challenge.qop;
 
   const ha1 = md5(`${user}:${challenge.realm}:${password}`);
   const ha2 = md5(`${method}:${uri}`);
@@ -139,12 +144,28 @@ async function fetchLiveIndexes({ apiHost, groupId, clusterName, publicKey, priv
 
 // ---------- Diff ----------
 
+// Fields Atlas adds on top of the user-owned definition. Stripped
+// before diffing so a response like
+//   { name, type, indexID, status, latestDefinition: {...}, ... }
+// does not show spurious drift against a committed JSON that only
+// carries name/type/fields/mappings.
+const META_FIELDS = new Set([
+  "_comment",
+  "_id",
+  "indexID",
+  "indexId",
+  "status",
+  "latestDefinition",
+  "queryable",
+]);
+
 function stripMeta(def) {
-  // Remove fields we don't care about for a definition-level diff.
-  const { _comment, _id, indexID, indexId, status, latestDefinition, queryable, ...rest } = def ?? {};
-  // Many Atlas responses wrap the definition inside latestDefinition —
-  // caller should unwrap before diffing.
-  return rest;
+  if (!def) return {};
+  const out = {};
+  for (const [k, v] of Object.entries(def)) {
+    if (!META_FIELDS.has(k)) out[k] = v;
+  }
+  return out;
 }
 
 function canonicalize(value) {
@@ -199,9 +220,7 @@ async function main() {
   console.log();
 
   // 1. Load every committed JSON file in infra/atlas-search/
-  const files = (await readdir(INDEX_DIR))
-    .filter((f) => f.endsWith(".json"))
-    .sort();
+  const files = (await readdir(INDEX_DIR)).filter((f) => f.endsWith(".json")).sort();
   if (files.length === 0) {
     console.error(`no .json files found in ${INDEX_DIR}`);
     process.exit(1);

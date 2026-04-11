@@ -20,7 +20,12 @@ export type MapLike<V> = Map<string, V> | Record<string, V> | undefined | null;
 
 /** Returns true if the value quacks like a real `Map`. */
 function isRealMap<V>(m: unknown): m is Map<string, V> {
-  return typeof m === "object" && m !== null && typeof (m as any).get === "function" && typeof (m as any).has === "function";
+  return (
+    typeof m === "object" &&
+    m !== null &&
+    typeof (m as any).get === "function" &&
+    typeof (m as any).has === "function"
+  );
 }
 
 /**

@@ -23,11 +23,11 @@ export interface SettlementRule {
  * GuildConfig — see issue #24.
  */
 export const DEFAULT_SIZE_RULES: Record<SettlementSize, SettlementRule> = {
-  hamlet:     { gpCap: 25,     itemsMin: 2,  itemsMax: 4  },
-  village:    { gpCap: 100,    itemsMin: 5,  itemsMax: 10 },
-  town:       { gpCap: 1000,   itemsMin: 10, itemsMax: 20 },
-  city:       { gpCap: 10000,  itemsMin: 20, itemsMax: 40 },
-  metropolis: { gpCap: 50000,  itemsMin: 40, itemsMax: 80 },
+  hamlet: { gpCap: 25, itemsMin: 2, itemsMax: 4 },
+  village: { gpCap: 100, itemsMin: 5, itemsMax: 10 },
+  town: { gpCap: 1000, itemsMin: 10, itemsMax: 20 },
+  city: { gpCap: 10000, itemsMin: 20, itemsMax: 40 },
+  metropolis: { gpCap: 50000, itemsMin: 40, itemsMax: 80 },
 };
 
 /**
@@ -48,15 +48,22 @@ export function resolveSettlementRule(
 
   // Merge with defaults — a partial override is allowed.
   const merged: SettlementRule = {
-    gpCap:    typeof override.gpCap === "number" && Number.isFinite(override.gpCap) && override.gpCap >= 0
-                ? override.gpCap
-                : defaults.gpCap,
-    itemsMin: typeof override.itemsMin === "number" && Number.isFinite(override.itemsMin) && override.itemsMin >= 0
-                ? Math.floor(override.itemsMin)
-                : defaults.itemsMin,
-    itemsMax: typeof override.itemsMax === "number" && Number.isFinite(override.itemsMax) && override.itemsMax >= 0
-                ? Math.floor(override.itemsMax)
-                : defaults.itemsMax,
+    gpCap:
+      typeof override.gpCap === "number" && Number.isFinite(override.gpCap) && override.gpCap >= 0
+        ? override.gpCap
+        : defaults.gpCap,
+    itemsMin:
+      typeof override.itemsMin === "number" &&
+      Number.isFinite(override.itemsMin) &&
+      override.itemsMin >= 0
+        ? Math.floor(override.itemsMin)
+        : defaults.itemsMin,
+    itemsMax:
+      typeof override.itemsMax === "number" &&
+      Number.isFinite(override.itemsMax) &&
+      override.itemsMax >= 0
+        ? Math.floor(override.itemsMax)
+        : defaults.itemsMax,
   };
   // Guarantee itemsMin <= itemsMax regardless of input.
   if (merged.itemsMin > merged.itemsMax) {
@@ -67,25 +74,25 @@ export function resolveSettlementRule(
 
 export interface GenerateStockParams {
   type: ShopType;
-  marketLevel: MarketLevel;        // "low" | "middle" | "high"
-  region?: string | null;          // region slug, optional
-  blackmarket?: boolean;           // default false
-  settlementSize: SettlementSize;  // hamlet..metropolis
-  desiredCount?: number | null;    // optional override for stock size
+  marketLevel: MarketLevel; // "low" | "middle" | "high"
+  region?: string | null; // region slug, optional
+  blackmarket?: boolean; // default false
+  settlementSize: SettlementSize; // hamlet..metropolis
+  desiredCount?: number | null; // optional override for stock size
   guildCfg?: GuildConfigLean | null;
 }
 
 /** Return shape for each picked item */
 export interface PricedPick {
-  it: any;       // lean Item doc
+  it: any; // lean Item doc
   price: number; // final gp after pricing logic
 }
 
 export interface GenerateStockResult {
   picks: PricedPick[];
-  gpCap: number;          // per-item cap from settlement size
-  attempted: number;      // how many candidates were considered
-  considered: number;     // how many were priceable
+  gpCap: number; // per-item cap from settlement size
+  attempted: number; // how many candidates were considered
+  considered: number; // how many were priceable
 }
 
 export async function generateStock(params: GenerateStockParams): Promise<GenerateStockResult> {
@@ -119,7 +126,7 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
 
   // Expand rarity caps if blackmarket is true
   const allowedRarities = new Set(policy.rarityCaps);
-  if (blackmarket) ["very rare", "legendary"].forEach(r => allowedRarities.add(r));
+  if (blackmarket) ["very rare", "legendary"].forEach((r) => allowedRarities.add(r));
 
   const perItemCap = rules.gpCap;
 
@@ -127,7 +134,7 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
   const baseQuery: any = {
     category: { $in: policy.categories },
     ...(blackmarket ? {} : { blackmarketOnly: { $ne: true } }),
-    ...(allowedRarities.size ? { rarity: { $in: [...allowedRarities] } } : {})
+    ...(allowedRarities.size ? { rarity: { $in: [...allowedRarities] } } : {}),
   };
 
   // Prefer local (region-matched) first, then global to fill out pool
@@ -139,11 +146,9 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
     const local = await Item.find({ ...baseQuery, regions: { $in: [regionId] } })
       .limit(Math.ceil(fetchTarget * 0.6))
       .lean<ItemDoc[]>();
-    const global = await Item.find(baseQuery)
-      .limit(fetchTarget)
-      .lean<ItemDoc[]>();
+    const global = await Item.find(baseQuery).limit(fetchTarget).lean<ItemDoc[]>();
 
-    const seen = new Set(local.map(i => i.slug));
+    const seen = new Set(local.map((i) => i.slug));
     const merged = [...local];
     for (const g of global) if (!seen.has(g.slug)) merged.push(g);
     candidates = merged;
@@ -169,11 +174,11 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
       });
       priceCache.set(it.slug, price);
       return { it, price };
-    })
+    }),
   );
 
   // Filter to priceable items (non-null) and—critically—respect the per-item GP cap
-  const eligible = priced.filter(p => p.price != null && p.price! <= perItemCap);
+  const eligible = priced.filter((p) => p.price != null && p.price! <= perItemCap);
 
   const considered = eligible.length;
   if (considered === 0) {
@@ -183,18 +188,19 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
   // Target count: either override or the settlement’s max
   const targetCount = Math.max(
     rules.itemsMin,
-    Math.min(desiredCount ?? rules.itemsMax, rules.itemsMax)
+    Math.min(desiredCount ?? rules.itemsMax, rules.itemsMax),
   );
 
   // Use your existing weighted sampler (rarity/category/region/blackmarket are inside availabilityWeight)
-  const picks = weightedSample(
-    eligible,
-    targetCount,
-    (p) => availabilityWeight(p.it, marketLevel, regionSlug, !!blackmarket, guildCfg)
+  const picks = weightedSample(eligible, targetCount, (p) =>
+    availabilityWeight(p.it, marketLevel, regionSlug, !!blackmarket, guildCfg),
   );
 
   // Map to output {it, price}; price pulled from our cache (already resolved)
-  const out: PricedPick[] = picks.map(p => ({ it: p.it, price: Number(priceCache.get(p.it.slug) || p.price) }));
+  const out: PricedPick[] = picks.map((p) => ({
+    it: p.it,
+    price: Number(priceCache.get(p.it.slug) || p.price),
+  }));
 
   return { picks: out, gpCap: perItemCap, attempted, considered };
 }

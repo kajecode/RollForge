@@ -60,7 +60,12 @@ export function getHistory(userId: string, channelId: string): Turn[] {
   return entry.turns;
 }
 
-export function appendTurns(userId: string, channelId: string, userContent: string, assistantContent: string) {
+export function appendTurns(
+  userId: string,
+  channelId: string,
+  userContent: string,
+  assistantContent: string,
+) {
   const k = storeKey(userId, channelId);
   const entry = store.get(k) ?? { turns: [], lastActivity: 0 };
   entry.turns.push(

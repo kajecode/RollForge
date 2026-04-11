@@ -8,7 +8,10 @@ describe("mapGet", () => {
   });
 
   it("reads from a real Map", () => {
-    const m = new Map<string, number>([["a", 1], ["b", 2]]);
+    const m = new Map<string, number>([
+      ["a", 1],
+      ["b", 2],
+    ]);
     expect(mapGet(m, "a")).toBe(1);
     expect(mapGet(m, "missing")).toBeUndefined();
   });
@@ -64,7 +67,10 @@ describe("mapEntries", () => {
   });
 
   it("enumerates a real Map in insertion order", () => {
-    const m = new Map<string, number>([["a", 1], ["b", 2]]);
+    const m = new Map<string, number>([
+      ["a", 1],
+      ["b", 2],
+    ]);
     expect(mapEntries(m)).toEqual([
       ["a", 1],
       ["b", 2],

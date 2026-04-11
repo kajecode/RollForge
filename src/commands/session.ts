@@ -23,11 +23,30 @@ async function ingestSummary(guildId: string, campaignId: string, title: string,
   const [vector] = await embed([summary]);
   const doc = await Document.findOneAndUpdate(
     { campaignId, title: docTitle },
-    { $set: { title: docTitle, type: "lore", campaignId, visibility: "gm", source: sessionSource(guildId, title), updatedAt: new Date() } },
-    { upsert: true, new: true }
+    {
+      $set: {
+        title: docTitle,
+        type: "lore",
+        campaignId,
+        visibility: "gm",
+        source: sessionSource(guildId, title),
+        updatedAt: new Date(),
+      },
+    },
+    { upsert: true, new: true },
   );
   await Chunk.deleteMany({ documentId: doc._id });
-  await Chunk.insertMany([{ documentId: doc._id, ord: 0, title: docTitle, text: summary, embedding: vector, visibility: "gm", tags: ["session"] }]);
+  await Chunk.insertMany([
+    {
+      documentId: doc._id,
+      ord: 0,
+      title: docTitle,
+      text: summary,
+      embedding: vector,
+      visibility: "gm",
+      tags: ["session"],
+    },
+  ]);
 }
 
 /**
@@ -42,7 +61,7 @@ async function forgetSession(guildId: string, campaignId: string, title: string)
 
   // Find the RAG Document first so we can delete its chunks even if the
   // Session row has already been removed.
-  const doc = await Document.findOne({ campaignId, title: docTitle, source }).lean() as any;
+  const doc = (await Document.findOne({ campaignId, title: docTitle, source }).lean()) as any;
   if (doc?._id) {
     await Chunk.deleteMany({ documentId: doc._id });
     await Document.deleteOne({ _id: doc._id });
@@ -55,8 +74,8 @@ async function forgetSession(guildId: string, campaignId: string, title: string)
 }
 
 export default async function cmd(interaction: ChatInputCommandInteraction) {
-  const sub        = interaction.options.getSubcommand(true);
-  const guildId    = interaction.guildId!;
+  const sub = interaction.options.getSubcommand(true);
+  const guildId = interaction.guildId!;
   const campaignId = interaction.options.getString("campaign") || "default";
 
   await interaction.deferReply();
@@ -64,12 +83,12 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   // ── log ──────────────────────────────────────────────────────────────────
   if (sub === "log") {
     const title = interaction.options.getString("title", true);
-    const note  = interaction.options.getString("note", true);
+    const note = interaction.options.getString("note", true);
 
     await Session.findOneAndUpdate(
       { guildId, campaignId, title },
       { $push: { notes: note }, $setOnInsert: { sessionDate: new Date() } },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     await interaction.editReply(`Logged to **${title}**: ${note}`);
@@ -78,11 +97,11 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
 
   // ── recap ─────────────────────────────────────────────────────────────────
   if (sub === "recap") {
-    const title     = interaction.options.getString("title", true);
+    const title = interaction.options.getString("title", true);
     const summarize = interaction.options.getBoolean("summarize") || false;
-    const ingest    = interaction.options.getBoolean("ingest") || false;
+    const ingest = interaction.options.getBoolean("ingest") || false;
 
-    const session = await Session.findOne({ guildId, campaignId, title }).lean() as any;
+    const session = (await Session.findOne({ guildId, campaignId, title }).lean()) as any;
     if (!session) {
       await interaction.editReply(`No session found with title **${title}**.`);
       return;
@@ -94,7 +113,10 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
     let summary = session.summary || "";
 
     if (summarize || (ingest && !summary)) {
-      summary = await complete(SUMMARIZE_SYSTEM, `Session: ${title}\nDate: ${date}\n\nNotes:\n${noteList}`);
+      summary = await complete(
+        SUMMARIZE_SYSTEM,
+        `Session: ${title}\nDate: ${date}\n\nNotes:\n${noteList}`,
+      );
       await Session.updateOne({ guildId, campaignId, title }, { $set: { summary } });
     }
 
@@ -102,14 +124,16 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
       await ingestSummary(guildId, campaignId, title, summary);
     }
 
-    const parts = splitText([
-      `**Session: ${title}** — ${date}`,
-      "",
-      "**Notes**",
-      noteList || "_(none)_",
-      ...(summary ? ["", "**Summary**", summary] : []),
-      ...(ingest && summary ? ["", "-# Ingested into RAG corpus."] : []),
-    ].join("\n"));
+    const parts = splitText(
+      [
+        `**Session: ${title}** — ${date}`,
+        "",
+        "**Notes**",
+        noteList || "_(none)_",
+        ...(summary ? ["", "**Summary**", summary] : []),
+        ...(ingest && summary ? ["", "-# Ingested into RAG corpus."] : []),
+      ].join("\n"),
+    );
 
     await interaction.editReply(parts[0]);
     for (const part of parts.slice(1)) await interaction.followUp(part);
@@ -133,18 +157,19 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
 
   // ── list ──────────────────────────────────────────────────────────────────
   if (sub === "list") {
-    const sessions = await Session.find({ guildId, campaignId })
+    const sessions = (await Session.find({ guildId, campaignId })
       .sort({ sessionDate: -1 })
       .limit(20)
-      .lean() as any[];
+      .lean()) as any[];
 
     if (!sessions.length) {
       await interaction.editReply("No sessions logged yet.");
       return;
     }
 
-    const lines = sessions.map(s =>
-      `• **${s.title}** — ${new Date(s.sessionDate).toLocaleDateString()} (${s.notes.length} note${s.notes.length !== 1 ? "s" : ""}${s.summary ? ", summarized" : ""})`
+    const lines = sessions.map(
+      (s) =>
+        `• **${s.title}** — ${new Date(s.sessionDate).toLocaleDateString()} (${s.notes.length} note${s.notes.length !== 1 ? "s" : ""}${s.summary ? ", summarized" : ""})`,
     );
     await interaction.editReply(lines.join("\n"));
     return;

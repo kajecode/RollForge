@@ -1,5 +1,9 @@
 // src/util/ephemeral.ts
-import { MessageFlags, type InteractionReplyOptions, type InteractionDeferReplyOptions } from "discord.js";
+import {
+  MessageFlags,
+  type InteractionReplyOptions,
+  type InteractionDeferReplyOptions,
+} from "discord.js";
 
 export const EPHEMERAL_FLAGS = MessageFlags.Ephemeral;
 

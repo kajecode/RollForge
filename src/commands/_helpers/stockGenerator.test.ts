@@ -25,11 +25,7 @@ vi.mock("@/services/pricing.js", () => ({
   buildMaterialCache: (...args: any[]) => buildMaterialCacheMock(...args),
 }));
 
-import {
-  generateStock,
-  resolveSettlementRule,
-  DEFAULT_SIZE_RULES,
-} from "./stockGenerator.js";
+import { generateStock, resolveSettlementRule, DEFAULT_SIZE_RULES } from "./stockGenerator.js";
 
 function chainable(leanResult: any) {
   const chain: any = {
@@ -105,9 +101,7 @@ describe("generateStock", () => {
     const cheap = mockItem({ slug: "cheap", basePriceGP: 1 });
     const pricey = mockItem({ slug: "pricey", basePriceGP: 9999 });
     itemFind.mockReturnValue(chainable([cheap, pricey]));
-    resolvePriceGPMock.mockImplementation(async (item: any) =>
-      item.slug === "cheap" ? 5 : 5000,
-    );
+    resolvePriceGPMock.mockImplementation(async (item: any) => (item.slug === "cheap" ? 5 : 5000));
 
     const result = await generateStock({
       type: "general",
@@ -213,9 +207,7 @@ describe("resolveSettlementRule (#24)", () => {
   it("works when settlementRules is a real Map (hydrated doc)", () => {
     const guildCfg = {
       economy: {
-        settlementRules: new Map([
-          ["city", { gpCap: 20_000, itemsMin: 25, itemsMax: 50 }],
-        ]),
+        settlementRules: new Map([["city", { gpCap: 20_000, itemsMin: 25, itemsMax: 50 }]]),
       },
     } as any;
     expect(resolveSettlementRule("city", guildCfg)).toEqual({

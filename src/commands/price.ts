@@ -18,7 +18,7 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   if (item) {
     if (item.basePriceGP != null) {
       await interaction.editReply(
-        `**${item.name}** costs **${item.basePriceGP} gp** (${item.priceSource}).`
+        `**${item.name}** costs **${item.basePriceGP} gp** (${item.priceSource}).`,
       );
       return;
     }
@@ -27,7 +27,7 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
       if (est != null) {
         const range = MAGIC_PRICE_BY_RARITY[item.rarity];
         await interaction.editReply(
-          `**${item.name}** (~**${est} gp**; ${item.rarity}). Range ${range.min}-${range.max} gp (house rarity pricing).`
+          `**${item.name}** (~**${est} gp**; ${item.rarity}). Range ${range.min}-${range.max} gp (house rarity pricing).`,
         );
         return;
       }
@@ -37,7 +37,7 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   // Last resort: LLM estimate (label as house)
   const out = await complete(
     "You price fantasy items fairly using 5e SRD baselines; if unsure, say 'house estimate'.",
-    priceTemplate(itemName)
+    priceTemplate(itemName),
   );
   await interaction.editReply(out);
 }

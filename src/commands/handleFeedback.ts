@@ -30,8 +30,16 @@ export async function handleFeedback(interaction: ButtonInteraction) {
 
   // Disable both buttons so the row shows the vote was recorded
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("rule_fb:up:done").setLabel(sentiment === "up" ? "👍 ✓" : "👍").setStyle(ButtonStyle.Secondary).setDisabled(true),
-    new ButtonBuilder().setCustomId("rule_fb:down:done").setLabel(sentiment === "down" ? "👎 ✓" : "👎").setStyle(ButtonStyle.Secondary).setDisabled(true),
+    new ButtonBuilder()
+      .setCustomId("rule_fb:up:done")
+      .setLabel(sentiment === "up" ? "👍 ✓" : "👍")
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true),
+    new ButtonBuilder()
+      .setCustomId("rule_fb:down:done")
+      .setLabel(sentiment === "down" ? "👎 ✓" : "👎")
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true),
   );
   await interaction.editReply({ components: [row] });
 }

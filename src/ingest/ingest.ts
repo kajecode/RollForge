@@ -14,8 +14,16 @@ import fg from "fast-glob";
 type IngestOpts = {
   baseDir: string;
   campaignId: string;
-  defaultType: "srd"|"house_rule"|"lore"|"npc"|"location"|"handout"|"statblock"|"encounter";
-  defaultVisibility: "gm"|"players"|"public";
+  defaultType:
+    | "srd"
+    | "house_rule"
+    | "lore"
+    | "npc"
+    | "location"
+    | "handout"
+    | "statblock"
+    | "encounter";
+  defaultVisibility: "gm" | "players" | "public";
   prune: boolean;
   dryRun: boolean;
 };
@@ -39,7 +47,7 @@ const DEFAULT_CHUNK_SIZE = 1200;
 const PRICE_PER_MILLION_INPUT_TOKENS: Record<string, number> = {
   "text-embedding-3-large": 0.13,
   "text-embedding-3-small": 0.02,
-  "text-embedding-ada-002": 0.10,
+  "text-embedding-ada-002": 0.1,
 };
 
 interface IngestStats {
@@ -82,7 +90,7 @@ function sha256(input: string) {
  */
 function guildIdFromPath(filePath: string): string | null {
   const parts = filePath.split(path.sep);
-  const gIdx = parts.findIndex(p => p.toLowerCase() === "guilds");
+  const gIdx = parts.findIndex((p) => p.toLowerCase() === "guilds");
   if (gIdx >= 0 && parts[gIdx + 1]) return parts[gIdx + 1];
   return null;
 }
@@ -90,10 +98,10 @@ function guildIdFromPath(filePath: string): string | null {
 function tagsFromPath(filePath: string): string[] {
   const parts = filePath.split(path.sep);
   const tags: string[] = [];
-  const rIdx = parts.findIndex(p => p.toLowerCase() === "regions");
-  if (rIdx >= 0 && parts[rIdx+1]) tags.push(`region:${parts[rIdx+1].replace(/[-_]/g, " ")}`);
-  const fIdx = parts.findIndex(p => p.toLowerCase() === "factions");
-  if (fIdx >= 0 && parts[fIdx+1]) tags.push(`faction:${parts[fIdx+1].replace(/[-_]/g, " ")}`);
+  const rIdx = parts.findIndex((p) => p.toLowerCase() === "regions");
+  if (rIdx >= 0 && parts[rIdx + 1]) tags.push(`region:${parts[rIdx + 1].replace(/[-_]/g, " ")}`);
+  const fIdx = parts.findIndex((p) => p.toLowerCase() === "factions");
+  if (fIdx >= 0 && parts[fIdx + 1]) tags.push(`faction:${parts[fIdx + 1].replace(/[-_]/g, " ")}`);
   // Tag with the source guildId when the path has the #18 guild-scoped
   // prefix. Downstream RAG queries can filter by this to keep cross-guild
   // corpus isolated even when multiple guilds ingest into the same
@@ -105,16 +113,32 @@ function tagsFromPath(filePath: string): string[] {
 
 function normalizeTags(tags: unknown): string[] {
   const arr = Array.isArray(tags) ? tags : typeof tags === "string" ? tags.split(",") : [];
-  const cleaned = arr.map(t => String(t ?? "").trim()).filter(Boolean).map(t => {
-    const [k, ...rest] = t.split(":");
-    return rest.length ? `${k.toLowerCase()}:${rest.join(":").trim()}` : t.toLowerCase();
-  });
-  const seen = new Set<string>(); const out: string[] = [];
-  for (const t of cleaned) { const key = t.toLowerCase(); if (!seen.has(key)) { seen.add(key); out.push(t); } }
+  const cleaned = arr
+    .map((t) => String(t ?? "").trim())
+    .filter(Boolean)
+    .map((t) => {
+      const [k, ...rest] = t.split(":");
+      return rest.length ? `${k.toLowerCase()}:${rest.join(":").trim()}` : t.toLowerCase();
+    });
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of cleaned) {
+    const key = t.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(t);
+    }
+  }
   return out;
 }
 
-async function upsertMarkdown(absPath: string, relPath: string, opts: IngestOpts, seen: Set<string>, stats: IngestStats) {
+async function upsertMarkdown(
+  absPath: string,
+  relPath: string,
+  opts: IngestOpts,
+  seen: Set<string>,
+  stats: IngestStats,
+) {
   const raw = fs.readFileSync(absPath, "utf8");
   const parsed = matter(raw);
   const fm = parsed.data as Record<string, unknown>;
@@ -142,8 +166,19 @@ async function upsertMarkdown(absPath: string, relPath: string, opts: IngestOpts
     ? ({ _id: null } as any)
     : await Document.findOneAndUpdate(
         { title, campaignId: opts.campaignId },
-        { $set: { title, type, visibility, tags, campaignId: opts.campaignId, source: relPath, contentHash, updatedAt: new Date() } },
-        { upsert: true, new: true }
+        {
+          $set: {
+            title,
+            type,
+            visibility,
+            tags,
+            campaignId: opts.campaignId,
+            source: relPath,
+            contentHash,
+            updatedAt: new Date(),
+          },
+        },
+        { upsert: true, new: true },
       );
 
   // If content unchanged, skip chunk re-embed
@@ -154,7 +189,8 @@ async function upsertMarkdown(absPath: string, relPath: string, opts: IngestOpts
   }
 
   // Rebuild chunks — chunk_size frontmatter overrides the default
-  const chunkSize = typeof fm.chunk_size === "number" && fm.chunk_size > 0 ? fm.chunk_size : DEFAULT_CHUNK_SIZE;
+  const chunkSize =
+    typeof fm.chunk_size === "number" && fm.chunk_size > 0 ? fm.chunk_size : DEFAULT_CHUNK_SIZE;
   const parts = simpleChunk(content, chunkSize);
   if (!parts.length) {
     if (!opts.dryRun) {
@@ -173,22 +209,38 @@ async function upsertMarkdown(absPath: string, relPath: string, opts: IngestOpts
     const approxTokens = parts.reduce((acc, t) => acc + Math.ceil(t.length / 4), 0);
     addTokens(stats, approxTokens);
     stats.docsIngested++;
-    console.log(`[dry-run] Would ingest: ${title} (${parts.length} chunks, ~${approxTokens} tokens)`);
+    console.log(
+      `[dry-run] Would ingest: ${title} (${parts.length} chunks, ~${approxTokens} tokens)`,
+    );
     return;
   }
 
   const { vectors, tokens } = await batchEmbed(parts, 64);
   addTokens(stats, tokens);
   await Chunk.deleteMany({ documentId: doc._id });
-  await Chunk.insertMany(parts.map((text, i) => ({
-    documentId: doc._id, ord: i, title, text, embedding: vectors[i], visibility, tags
-  })));
+  await Chunk.insertMany(
+    parts.map((text, i) => ({
+      documentId: doc._id,
+      ord: i,
+      title,
+      text,
+      embedding: vectors[i],
+      visibility,
+      tags,
+    })),
+  );
 
   stats.docsIngested++;
   console.log(`Ingested: ${title} (${parts.length} chunks, ${tokens} tokens)`);
 }
 
-async function upsertPlain(absPath: string, relPath: string, opts: IngestOpts, seen: Set<string>, stats: IngestStats) {
+async function upsertPlain(
+  absPath: string,
+  relPath: string,
+  opts: IngestOpts,
+  seen: Set<string>,
+  stats: IngestStats,
+) {
   const text = fs.readFileSync(absPath, "utf8").trim();
   const contentHash = sha256(text);
   const title = path.basename(relPath, path.extname(relPath));
@@ -207,8 +259,19 @@ async function upsertPlain(absPath: string, relPath: string, opts: IngestOpts, s
     ? ({ _id: null } as any)
     : await Document.findOneAndUpdate(
         { title, campaignId: opts.campaignId },
-        { $set: { title, type, visibility, tags, campaignId: opts.campaignId, source: relPath, contentHash, updatedAt: new Date() } },
-        { upsert: true, new: true }
+        {
+          $set: {
+            title,
+            type,
+            visibility,
+            tags,
+            campaignId: opts.campaignId,
+            source: relPath,
+            contentHash,
+            updatedAt: new Date(),
+          },
+        },
+        { upsert: true, new: true },
       );
 
   if (existing?.contentHash === contentHash) {
@@ -224,7 +287,9 @@ async function upsertPlain(absPath: string, relPath: string, opts: IngestOpts, s
     const approxTokens = parts.reduce((acc, t) => acc + Math.ceil(t.length / 4), 0);
     addTokens(stats, approxTokens);
     stats.docsIngested++;
-    console.log(`[dry-run] Would ingest: ${title} (${parts.length} chunks, ~${approxTokens} tokens)`);
+    console.log(
+      `[dry-run] Would ingest: ${title} (${parts.length} chunks, ~${approxTokens} tokens)`,
+    );
     return;
   }
 
@@ -232,9 +297,17 @@ async function upsertPlain(absPath: string, relPath: string, opts: IngestOpts, s
   addTokens(stats, tokens);
 
   await Chunk.deleteMany({ documentId: doc._id });
-  await Chunk.insertMany(parts.map((t, i) => ({
-    documentId: doc._id, ord: i, title, text: t, embedding: vectors[i], visibility, tags
-  })));
+  await Chunk.insertMany(
+    parts.map((t, i) => ({
+      documentId: doc._id,
+      ord: i,
+      title,
+      text: t,
+      embedding: vectors[i],
+      visibility,
+      tags,
+    })),
+  );
 
   stats.docsIngested++;
   console.log(`Ingested: ${title} (${parts.length} chunks, ${tokens} tokens)`);
@@ -253,12 +326,12 @@ function isSessionSource(source: string | null | undefined): boolean {
 
 async function pruneMissing(campaignId: string, seenSources: Set<string>) {
   const toDelete = await Document.find({ campaignId }).lean();
-  const orphanDocs = toDelete.filter(d =>
-    d.source && !seenSources.has(d.source) && !isSessionSource(d.source),
+  const orphanDocs = toDelete.filter(
+    (d) => d.source && !seenSources.has(d.source) && !isSessionSource(d.source),
   );
   if (!orphanDocs.length) return;
 
-  const ids = orphanDocs.map(d => d._id);
+  const ids = orphanDocs.map((d) => d._id);
   await Chunk.deleteMany({ documentId: { $in: ids } });
   await Document.deleteMany({ _id: { $in: ids } });
 
@@ -292,7 +365,11 @@ function printSummary(stats: IngestStats, opts: IngestOpts) {
   console.log("  cleared (empty):    " + stats.docsCleared);
   console.log("  chunks processed:   " + stats.chunks);
   console.log("  embedding tokens:   " + stats.tokens.toLocaleString());
-  console.log("  estimated cost:     " + formatUsd(stats.estimatedUSD) + `  (${model}${rate != null ? `, $${rate}/1M` : ""})`);
+  console.log(
+    "  estimated cost:     " +
+      formatUsd(stats.estimatedUSD) +
+      `  (${model}${rate != null ? `, $${rate}/1M` : ""})`,
+  );
   if (opts.dryRun) {
     console.log("");
     console.log("  dry-run token counts use a ~4 chars/token heuristic — the");
@@ -302,7 +379,14 @@ function printSummary(stats: IngestStats, opts: IngestOpts) {
 
 async function main() {
   const { baseDir, campaignId, prune, dryRun } = parseArgs(process.argv);
-  const opts: IngestOpts = { baseDir, campaignId, defaultType: "lore", defaultVisibility: "gm", prune, dryRun };
+  const opts: IngestOpts = {
+    baseDir,
+    campaignId,
+    defaultType: "lore",
+    defaultVisibility: "gm",
+    prune,
+    dryRun,
+  };
 
   if (!dryRun) {
     await connectMongo();
@@ -340,4 +424,7 @@ async function main() {
   process.exit(0);
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

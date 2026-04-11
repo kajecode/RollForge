@@ -1,4 +1,9 @@
-import { ChatInputCommandInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from "discord.js";
 import { embed } from "@/core/embedding";
 import { hybridSearch } from "@/core/rag";
 import { complete } from "@/core/llm";
@@ -28,7 +33,7 @@ const MAX_QUERY_CHARS = 500;
  */
 export function sanitizeQuery(q: string): string {
   return q
-    // eslint-disable-next-line no-control-regex
+
     .replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028\u2029\ufeff]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -61,14 +66,16 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   const channelId = interaction.channelId;
   const history = getHistory(userId, channelId);
 
-  const lastUserTurn = [...history].reverse().find(t => t.role === "user")?.content;
+  const lastUserTurn = [...history].reverse().find((t) => t.role === "user")?.content;
   const embeddingQuery = lastUserTurn ? `${lastUserTurn} ${q}` : q;
 
   const visibility = await visibilityForInteraction(interaction.member as any, channelId);
   const [qv] = await embed([embeddingQuery]);
   const hits = await hybridSearch(q, qv, { k: 6, visibility });
 
-  const context = hits.map((h, i) => `[${i+1}] ${h.title ?? "Doc"} (score ${h.score.toFixed(2)}):\n${h.text}`).join("\n\n");
+  const context = hits
+    .map((h, i) => `[${i + 1}] ${h.title ?? "Doc"} (score ${h.score.toFixed(2)}):\n${h.text}`)
+    .join("\n\n");
   const prompt = `Question: ${q}\n\nContext:\n${context}\n\nAnswer with steps if procedural. Include short source mentions like [Doc Title].`;
 
   // Cap the LLM response before sending it to Discord. A runaway answer
@@ -83,10 +90,20 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   const parts = splitText(answer).slice(0, MAX_REPLY_PARTS);
 
   // Feedback buttons on the first (or only) reply
-  const token = storePendingFeedback(q, hits.map(h => h._id.toString()), interaction.guildId!);
+  const token = storePendingFeedback(
+    q,
+    hits.map((h) => h._id.toString()),
+    interaction.guildId!,
+  );
   const feedbackRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`rule_fb:up:${token}`).setLabel("👍").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`rule_fb:down:${token}`).setLabel("👎").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`rule_fb:up:${token}`)
+      .setLabel("👍")
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`rule_fb:down:${token}`)
+      .setLabel("👎")
+      .setStyle(ButtonStyle.Secondary),
   );
 
   await interaction.editReply({ content: parts[0], components: [feedbackRow] });

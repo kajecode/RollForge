@@ -1,13 +1,27 @@
 import mongoose, { Schema, InferSchemaType, Types } from "mongoose";
 
-const RegionSchema = new Schema({
+const RegionSchema = new Schema(
+  {
     name: { type: String, unique: true, required: true },
     slug: { type: String, unique: true, required: true },
     type: {
       type: String,
       required: true,
-      enum: ["world","region","nation","province","state","county","city","town","district","village","hamlet","forest"],
-      index: true
+      enum: [
+        "world",
+        "region",
+        "nation",
+        "province",
+        "state",
+        "county",
+        "city",
+        "town",
+        "district",
+        "village",
+        "hamlet",
+        "forest",
+      ],
+      index: true,
     },
 
     // Hierarchy
@@ -27,11 +41,13 @@ const RegionSchema = new Schema({
       population: Number,
       description: { type: String, default: "" },
       tags: { type: [String], default: [] }, // e.g., ["coastal", "port", "forest", "desert"]
-      notes: { type: String }
-    }    
-  }, { 
-    timestamps: true 
-});
+      notes: { type: String },
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
 // Allow duplicate names across different parents but not siblings:
 RegionSchema.index({ parent: 1, name: 1 }, { unique: true });
@@ -40,10 +56,7 @@ RegionSchema.index({ ancestors: 1 });
 // Geospatial (if you use geo):
 RegionSchema.index({ geo: "2dsphere" });
 // Case-insensitive collation index for autocomplete prefix lookup (#13).
-RegionSchema.index(
-  { name: 1 },
-  { name: "name_ci", collation: { locale: "en", strength: 2 } },
-);
+RegionSchema.index({ name: 1 }, { name: "name_ci", collation: { locale: "en", strength: 2 } });
 
 // Keep path/ancestors consistent
 function norm(s: string) {
@@ -65,7 +78,10 @@ RegionSchema.pre("save", async function () {
       doc.ancestors = [];
       doc.path = norm(doc.slug);
     } else {
-      const parent = await doc.constructor.findById(doc.parent).select("ancestors path slug").lean();
+      const parent = await doc.constructor
+        .findById(doc.parent)
+        .select("ancestors path slug")
+        .lean();
       if (!parent) throw new Error("Parent region not found");
       doc.ancestors = [...(parent.ancestors || []), parent._id];
       const parentPath = parent.path || norm(parent.slug);

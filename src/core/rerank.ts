@@ -1,4 +1,4 @@
-type Hit = { id: string; score: number; src: "vec"|"kw"; payload: any };
+type Hit = { id: string; score: number; src: "vec" | "kw"; payload: any };
 const K = 60; // RRF constant; larger = flatter weighting
 
 export function rrfMerge(vec: Hit[], kw: Hit[], limit: number) {
@@ -16,7 +16,7 @@ export function rrfMerge(vec: Hit[], kw: Hit[], limit: number) {
   apply(kw);
 
   return Array.from(map.entries())
-    .sort((a,b)=>b[1].rrf - a[1].rrf)
+    .sort((a, b) => b[1].rrf - a[1].rrf)
     .slice(0, limit)
-    .map(([,v]) => v.payload);
+    .map(([, v]) => v.payload);
 }
