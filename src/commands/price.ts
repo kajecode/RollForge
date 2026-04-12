@@ -35,9 +35,17 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   }
 
   // Last resort: LLM estimate (label as house)
-  const out = await complete(
-    "You price fantasy items fairly using 5e SRD baselines; if unsure, say 'house estimate'.",
-    priceTemplate(itemName),
-  );
+  let out: string;
+  try {
+    out = await complete(
+      "You price fantasy items fairly using 5e SRD baselines; if unsure, say 'house estimate'.",
+      priceTemplate(itemName),
+    );
+  } catch {
+    await interaction.editReply(
+      `Could not find **${itemName}** in the database, and the AI pricing service is currently unavailable.`,
+    );
+    return;
+  }
   await interaction.editReply(out);
 }

@@ -74,6 +74,8 @@ interface IngestStats {
   docsIngested: number;
   docsSkipped: number;
   docsCleared: number;
+  docsFailed: number;
+  failedPaths: string[];
   chunks: number;
   tokens: number;
   estimatedUSD: number | null;
@@ -85,6 +87,8 @@ function newStats(): IngestStats {
     docsIngested: 0,
     docsSkipped: 0,
     docsCleared: 0,
+    docsFailed: 0,
+    failedPaths: [],
     chunks: 0,
     tokens: 0,
     estimatedUSD: null,
@@ -408,6 +412,12 @@ function printSummary(stats: IngestStats, opts: IngestOpts) {
   console.log("  ingested / updated: " + stats.docsIngested);
   console.log("  skipped (unchanged):" + stats.docsSkipped);
   console.log("  cleared (empty):    " + stats.docsCleared);
+  if (stats.docsFailed > 0) {
+    console.log("  FAILED:             " + stats.docsFailed);
+    for (const p of stats.failedPaths) {
+      console.log("    ✗ " + p);
+    }
+  }
   console.log("  chunks processed:   " + stats.chunks);
   console.log("  embedding tokens:   " + stats.tokens.toLocaleString());
   console.log(
@@ -455,7 +465,9 @@ async function main() {
         await upsertPlain(abs, rel, opts, seen, stats);
       }
     } catch (err) {
-      console.error(`Failed to ingest ${rel}:`, err);
+      stats.docsFailed++;
+      stats.failedPaths.push(rel);
+      console.error(`✗ Failed to ingest ${rel}:`, err);
     }
   }
 

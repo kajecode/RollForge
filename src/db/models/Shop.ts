@@ -2,21 +2,25 @@ import mongoose, { Schema, InferSchemaType } from "mongoose";
 
 const StockSchema = new Schema(
   {
-    name: String,
-    priceGP: Number,
-    rarity: String,
-    category: String,
-    isMagic: Boolean,
-    notes: String,
+    name: { type: String, required: true, trim: true },
+    priceGP: { type: Number, required: true, min: 0 },
+    rarity: {
+      type: String,
+      enum: ["none", "common", "uncommon", "rare", "very rare", "legendary", "artifact"],
+      default: "none",
+    },
+    category: { type: String, default: "gear", trim: true },
+    isMagic: { type: Boolean, default: false },
+    notes: { type: String, default: "" },
   },
   { _id: false },
 );
 
 const SpecialItemSchema = new Schema(
   {
-    name: String,
-    description: String,
-    priceGP: Number,
+    name: { type: String, required: true, trim: true },
+    description: { type: String, default: "" },
+    priceGP: { type: Number, min: 0 },
   },
   { _id: false },
 );

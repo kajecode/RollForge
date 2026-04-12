@@ -90,7 +90,13 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   }
 
   // Generate
-  const out = await complete(SYSTEM_NARRATIVE, npcTemplate(tags));
+  let out: string;
+  try {
+    out = await complete(SYSTEM_NARRATIVE, npcTemplate(tags));
+  } catch {
+    await interaction.editReply("The AI service is currently unavailable. Please try again later.");
+    return;
+  }
   await interaction.editReply(out);
 
   if (save) {
