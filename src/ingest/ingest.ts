@@ -197,7 +197,7 @@ async function upsertMarkdown(
             updatedAt: new Date(),
           },
         },
-        { upsert: true, new: true },
+        { upsert: true, returnDocument: "after" },
       );
 
   // If content unchanged AND embedding dimensions match, skip.
@@ -299,7 +299,7 @@ async function upsertPlain(
             updatedAt: new Date(),
           },
         },
-        { upsert: true, new: true },
+        { upsert: true, returnDocument: "after" },
       );
 
   if (existing?.contentHash === contentHash) {

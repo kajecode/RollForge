@@ -250,7 +250,7 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
           markdown: md,
         },
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
 
     embed.setFooter({

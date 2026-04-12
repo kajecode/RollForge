@@ -94,7 +94,7 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
     await Npc.findOneAndUpdate(
       { guildId: interaction.guildId!, name },
       { $set: { tags, region: region ?? "", shopName: shop ?? "", content: out } },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
     if (shop) {
       await Shop.findOneAndUpdate(
