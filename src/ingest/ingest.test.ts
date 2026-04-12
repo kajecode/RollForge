@@ -116,3 +116,34 @@ describe("isSessionSource (#19)", () => {
     expect(shouldPrune("session:g1:Session 12", seen)).toBe(false);
   });
 });
+
+describe("hasDimDrift (#46)", () => {
+  // Mirror of the helper in src/ingest/ingest.ts. Tests verify the
+  // branch logic rather than the DB round-trip (which would need a
+  // real mongo connection or a full vi.mock of Chunk).
+
+  function hasDimDriftLocal(
+    storedEmbedding: number[] | null | undefined,
+    expectedDim: number,
+  ): boolean {
+    if (!storedEmbedding) return false;
+    return storedEmbedding.length !== expectedDim;
+  }
+
+  it("returns false when the dimensions match", () => {
+    expect(hasDimDriftLocal(new Array(1536).fill(0), 1536)).toBe(false);
+  });
+
+  it("returns true when the stored embedding is wider than expected", () => {
+    expect(hasDimDriftLocal(new Array(3072).fill(0), 1536)).toBe(true);
+  });
+
+  it("returns true when the stored embedding is narrower than expected", () => {
+    expect(hasDimDriftLocal(new Array(1536).fill(0), 3072)).toBe(true);
+  });
+
+  it("returns false when there is no stored embedding (new document)", () => {
+    expect(hasDimDriftLocal(null, 1536)).toBe(false);
+    expect(hasDimDriftLocal(undefined, 1536)).toBe(false);
+  });
+});

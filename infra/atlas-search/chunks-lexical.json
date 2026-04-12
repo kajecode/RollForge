@@ -1,13 +1,19 @@
 {
-  "_comment": "Keyword (Atlas Search) index for the chunks collection. Name must be 'lexical' to match src/core/rag.ts keywordSearch(). The $match stage after $search still filters by visibility in-memory; the scalar index defined in src/db/models/Chunks.ts covers that path.",
+  "_comment": "Keyword (Atlas Search) index for the chunks collection. Name must be 'lexical' to match src/core/rag.ts keywordSearch(). The $match stage after $search filters by visibility in application code; the scalar Mongoose index on Chunk.visibility covers that path. The tags and visibility fields here support Atlas Search queries if needed in the future.",
   "name": "lexical",
   "mappings": {
     "dynamic": false,
     "fields": {
-      "title": {
+      "tags": {
         "type": "string"
       },
       "text": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "visibility": {
         "type": "string"
       }
     }

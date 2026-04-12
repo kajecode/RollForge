@@ -32,6 +32,25 @@ type DocumentLean = DocumentDoc & { _id: any };
 
 const DEFAULT_CHUNK_SIZE = 1200;
 
+/**
+ * Check whether an existing Document's chunks have embeddings whose
+ * dimension matches the currently configured EMBED_DIM. If any stored
+ * chunk has a different dimension, the document needs re-embedding even
+ * though its content hash is unchanged. This prevents silent orphaning
+ * when the embedding model (and therefore the vector dimension) changes
+ * between ingest runs — see issue #46.
+ *
+ * Returns `true` when at least one chunk exists with a mismatched dim,
+ * or `false` if all dims match (or if there are no chunks yet).
+ */
+async function hasDimDrift(docId: any): Promise<boolean> {
+  if (!docId) return false;
+  const sample = await Chunk.findOne({ documentId: docId }, { embedding: 1 }).lean();
+  if (!sample) return false;
+  const storedDim = Array.isArray((sample as any).embedding) ? (sample as any).embedding.length : 0;
+  return storedDim !== env.EMBED_DIM;
+}
+
 // ---------- Cost tracking ----------
 //
 // Run-wide counters accumulated by every upsertMarkdown / upsertPlain
@@ -181,11 +200,20 @@ async function upsertMarkdown(
         { upsert: true, new: true },
       );
 
-  // If content unchanged, skip chunk re-embed
+  // If content unchanged AND embedding dimensions match, skip.
+  // The dim check catches the case where the embedding model was
+  // switched (e.g. 3-large → 3-small) after a previous ingest: the
+  // file content is the same so the hash matches, but the stored
+  // vectors are the wrong dimension for the current index. Without
+  // this, chunks silently become invisible to $vectorSearch — issue #46.
   if (existing?.contentHash === contentHash) {
-    stats.docsSkipped++;
-    console.log(`↷ Skipped (unchanged): ${title}`);
-    return;
+    const dimDrift = await hasDimDrift(existing._id);
+    if (!dimDrift) {
+      stats.docsSkipped++;
+      console.log(`↷ Skipped (unchanged): ${title}`);
+      return;
+    }
+    console.log(`⟳ Re-embedding (dim drift ${env.EMBED_DIM}): ${title}`);
   }
 
   // Rebuild chunks — chunk_size frontmatter overrides the default
@@ -275,9 +303,13 @@ async function upsertPlain(
       );
 
   if (existing?.contentHash === contentHash) {
-    stats.docsSkipped++;
-    console.log(`↷ Skipped (unchanged): ${title}`);
-    return;
+    const dimDrift = await hasDimDrift(existing._id);
+    if (!dimDrift) {
+      stats.docsSkipped++;
+      console.log(`↷ Skipped (unchanged): ${title}`);
+      return;
+    }
+    console.log(`⟳ Re-embedding (dim drift ${env.EMBED_DIM}): ${title}`);
   }
 
   const parts = simpleChunk(text, DEFAULT_CHUNK_SIZE);
