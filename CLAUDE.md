@@ -109,6 +109,16 @@ Copy `.env.example` to `.env`. Required variables:
 
 PM2 config in `ecosystem.config.cjs`: app name `RollForge`, runs `pnpm start`, 512MB memory limit, logs to `/var/log/pm2/RollForge-*.log`. Deploys to a long-running VPS — **not Vercel, not serverless, not edge**.
 
-## Open Code Review Work
+## Releases
 
-A 26-finding code review was filed on 2026-04-10 as GitHub issues #1–#26 on `kajecode/RollForge`, organized into milestones M1 (Reliability) → M2 (Performance) → M3 (Correctness) → M4 (DX). When picking up work, check the issue list and milestones before planning anything new.
+Version bumps follow semver. To cut a release:
+
+```bash
+# 1. Generate a changelog entry (or use /generate-changelog)
+# 2. Bump version in package.json
+pnpm version patch|minor|major   # bumps + creates git tag
+# 3. Push the tag — triggers the release workflow
+git push origin --tags
+```
+
+The `.github/workflows/release.yml` workflow fires on `v*` tag pushes and creates a GitHub Release with auto-generated notes from the commit history since the previous tag. No npm publish (private bot).
