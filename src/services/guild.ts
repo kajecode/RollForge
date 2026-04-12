@@ -19,10 +19,9 @@ export function rarityBandFor(guild: GuildConfigLean | null | undefined, rarity:
 export function applyEconomy(
   price: number | null | undefined,
   guild: GuildConfigLean | null | undefined,
-) {
-  if (price == null) return price as any;
+): number | null | undefined {
+  if (price == null) return price;
   const mult = Number(guild?.economyMultiplier || 1);
   const adjusted = price * mult;
-  // round to 2 decimals in gp (i.e., whole copper)
   return Math.max(0, adjusted);
 }

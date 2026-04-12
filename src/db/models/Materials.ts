@@ -40,7 +40,7 @@ const MaterialSchema = new Schema(
     name: { type: String, unique: true, required: true, trim: true },
     slug: { type: String, unique: true, required: true, lowercase: true, trim: true },
     regions: [{ type: Schema.Types.ObjectId, ref: "Region" }],
-    regionSlugs: { type: String, default: [] }, // optional denormalized for easier querying
+    regionSlugs: { type: [String], default: [] },
     // === NEW ===
     baseMultiplier: {
       type: Number,

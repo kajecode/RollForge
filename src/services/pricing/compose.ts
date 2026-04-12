@@ -51,6 +51,9 @@ export async function resolvePriceGP(
 
   const price = base * marketMult * regionMult * materialMult * blackmarketMult;
 
-  const adjusted = applyEconomy(price, guildCfg ?? undefined);
+  // price is always a number here (base was null-checked above), so
+  // applyEconomy will always return a number. The ?? 0 satisfies the
+  // type checker without a runtime effect.
+  const adjusted = applyEconomy(price, guildCfg ?? undefined) ?? 0;
   return Math.max(0, adjusted);
 }
