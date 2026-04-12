@@ -1,6 +1,7 @@
 {
   "_comment": "Vector search index for the chunks collection. Name must be 'default' to match src/core/rag.ts vectorSearch(). This is a legacy-style type:search index with a knnVector field — Atlas supports $vectorSearch against this shape. The visibility field is type:token so the $vectorSearch filter clause can narrow gm/players/public at index time. See issue #46 for the dimension history.",
   "name": "default",
+  "type": "search",
   "mappings": {
     "dynamic": false,
     "fields": {
