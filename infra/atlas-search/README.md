@@ -8,13 +8,16 @@ provisioned via the Atlas UI, the Atlas CLI, or the Atlas Admin API.
 ## Indexes
 
 - **`chunks-default.json`** — vector search index for `$vectorSearch`. Named
-  `default`. Includes `visibility` as a filter field so the `filter` clause in
-  `vectorSearch()` can narrow gm / players / public results at index time
-  instead of post-scan.
+  `default`. Uses the legacy `type: "search"` shape with a `knnVector` field
+  at 1536 dimensions (matching `text-embedding-3-small`, the active embed
+  model). Atlas supports `$vectorSearch` against this shape. Includes
+  `visibility` as `type: "token"` so the `filter` clause in `vectorSearch()`
+  can narrow gm / players / public results at index time.
 - **`chunks-lexical.json`** — keyword search index for `$search`. Named
-  `lexical`. Maps `title` and `text` as string fields. The `$match` stage
-  after `$search` still filters by visibility in application code; the scalar
-  Mongoose index on `Chunk.visibility` covers that path.
+  `lexical`. Maps `title`, `text`, `tags`, and `visibility` as string fields.
+  The `$match` stage after `$search` still filters by visibility in
+  application code; the scalar Mongoose index on `Chunk.visibility` covers
+  that path.
 
 ## Applying changes
 
@@ -32,9 +35,12 @@ atlas clusters search indexes update <indexId> \
   --file infra/atlas-search/chunks-default.json
 ```
 
-Embedding dimensions (`numDimensions: 3072`) must match `EMBED_DIM` in
-`.env`. If you switch to a different embedding model, update both in the
-same deploy.
+Embedding dimensions (`dimensions: 1536`) must match `EMBED_DIM` in
+`.env`. If you switch to a different embedding model, update the index
+definition, the `EMBED_DIM` value, **and** re-ingest the corpus
+(`pnpm ingest`). The ingest script's dim-drift check (issue #46) will
+automatically re-embed documents whose stored vectors are the wrong
+dimension, so the re-ingest is safe to run at any time.
 
 ## Detecting drift
 

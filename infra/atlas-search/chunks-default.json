@@ -1,17 +1,26 @@
 {
-  "_comment": "Vector search index for the chunks collection. Name must be 'default' to match src/core/rag.ts vectorSearch(). The 'visibility' filter field is required by issue #10 — without it, the $vectorSearch filter clause in rag.ts cannot narrow results by gm/players/public at index time.",
+  "_comment": "Vector search index for the chunks collection. Name must be 'default' to match src/core/rag.ts vectorSearch(). This is a legacy-style type:search index with a knnVector field — Atlas supports $vectorSearch against this shape. The visibility field is type:token so the $vectorSearch filter clause can narrow gm/players/public at index time. See issue #46 for the dimension history.",
   "name": "default",
-  "type": "vectorSearch",
-  "fields": [
-    {
-      "type": "vector",
-      "path": "embedding",
-      "numDimensions": 3072,
-      "similarity": "cosine"
-    },
-    {
-      "type": "filter",
-      "path": "visibility"
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "embedding": {
+        "type": "knnVector",
+        "dimensions": 1536,
+        "similarity": "cosine"
+      },
+      "tags": {
+        "type": "string"
+      },
+      "text": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "visibility": {
+        "type": "token"
+      }
     }
-  ]
+  }
 }

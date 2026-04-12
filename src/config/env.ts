@@ -21,8 +21,8 @@ const Env = z.object({
 
   OPENAI_API_KEY: z.string(),
   MODEL_TEXT: z.string().default("gpt-4o-mini"),
-  MODEL_EMBED: z.string().default("text-embedding-3-large"),
-  EMBED_DIM: z.coerce.number().default(3072),
+  MODEL_EMBED: z.string().default("text-embedding-3-small"),
+  EMBED_DIM: z.coerce.number().default(1536),
 });
 
 export const env = Env.parse(process.env);
