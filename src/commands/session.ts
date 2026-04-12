@@ -33,7 +33,7 @@ async function ingestSummary(guildId: string, campaignId: string, title: string,
         updatedAt: new Date(),
       },
     },
-    { upsert: true, new: true },
+    { upsert: true, returnDocument: "after" },
   );
   await Chunk.deleteMany({ documentId: doc._id });
   await Chunk.insertMany([
@@ -88,7 +88,7 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
     await Session.findOneAndUpdate(
       { guildId, campaignId, title },
       { $push: { notes: note }, $setOnInsert: { sessionDate: new Date() } },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
 
     await interaction.editReply(`Logged to **${title}**: ${note}`);

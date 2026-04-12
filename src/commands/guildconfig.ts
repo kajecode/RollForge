@@ -15,7 +15,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guildId! },
       { $set: { [`rarityOverrides.${name}`]: { min, max } } },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
     return interaction.editReply(`Set **${name}** to ${min}-${max} gp.`);
   }
@@ -29,7 +29,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     const doc = await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guildId! },
       { $set: { allowedRegions: arr } },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
     return interaction.editReply(`Allowed regions: ${doc.allowedRegions.join(", ") || "(none)"}.`);
   }
@@ -63,7 +63,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guildId! },
       { $set: { [`economy.settlementRules.${size}`]: { gpCap, itemsMin, itemsMax } } },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
     return interaction.editReply(
       `Set **${size}** stocking rule: gp cap **${gpCap}**, items **${itemsMin}**–**${itemsMax}**.`,
@@ -91,7 +91,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     const doc = await GuildConfig.findOneAndUpdate(
       { guildId: interaction.guildId! },
       { $set: update },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
 
     const gmRoleText = doc.gmRoleId ? `<@&${doc.gmRoleId}>` : "(none)";

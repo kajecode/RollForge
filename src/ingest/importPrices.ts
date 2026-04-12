@@ -73,7 +73,11 @@ async function importCsv(filePath: string) {
             availabilityBoost: Number(r.availability_boost ?? 0) || 0, // NEW
           };
 
-          await Item.findOneAndUpdate({ slug }, { $set: doc }, { upsert: true, new: true });
+          await Item.findOneAndUpdate(
+            { slug },
+            { $set: doc },
+            { upsert: true, returnDocument: "after" },
+          );
 
           console.log(`Upserted: ${name} (${doc.basePriceGP ?? "[rarity-priced]"})`);
         }
