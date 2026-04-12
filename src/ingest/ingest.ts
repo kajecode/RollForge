@@ -246,17 +246,25 @@ async function upsertMarkdown(
   const { vectors, tokens } = await batchEmbed(parts, 64);
   addTokens(stats, tokens);
   await Chunk.deleteMany({ documentId: doc._id });
-  await Chunk.insertMany(
-    parts.map((text, i) => ({
-      documentId: doc._id,
-      ord: i,
-      title,
-      text,
-      embedding: vectors[i],
-      visibility,
-      tags,
-    })),
-  );
+  try {
+    await Chunk.insertMany(
+      parts.map((text, i) => ({
+        documentId: doc._id,
+        ord: i,
+        title,
+        text,
+        embedding: vectors[i],
+        visibility,
+        tags,
+      })),
+    );
+  } catch (insertErr) {
+    // If insertion fails after the delete, the document has zero
+    // chunks and is broken. Invalidate the content hash so the next
+    // ingest run re-processes this document instead of skipping it.
+    await Document.updateOne({ _id: doc._id }, { $set: { contentHash: "" } }).catch(() => {});
+    throw insertErr;
+  }
 
   stats.docsIngested++;
   console.log(`Ingested: ${title} (${parts.length} chunks, ${tokens} tokens)`);
@@ -329,17 +337,22 @@ async function upsertPlain(
   addTokens(stats, tokens);
 
   await Chunk.deleteMany({ documentId: doc._id });
-  await Chunk.insertMany(
-    parts.map((t, i) => ({
-      documentId: doc._id,
-      ord: i,
-      title,
-      text: t,
-      embedding: vectors[i],
-      visibility,
-      tags,
-    })),
-  );
+  try {
+    await Chunk.insertMany(
+      parts.map((t, i) => ({
+        documentId: doc._id,
+        ord: i,
+        title,
+        text: t,
+        embedding: vectors[i],
+        visibility,
+        tags,
+      })),
+    );
+  } catch (insertErr) {
+    await Document.updateOne({ _id: doc._id }, { $set: { contentHash: "" } }).catch(() => {});
+    throw insertErr;
+  }
 
   stats.docsIngested++;
   console.log(`Ingested: ${title} (${parts.length} chunks, ${tokens} tokens)`);

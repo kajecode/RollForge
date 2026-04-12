@@ -41,15 +41,25 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    // Upsert relation on both sides (remove existing entry for this pair first)
-    await Npc.updateOne(
-      { guildId: interaction.guildId!, name },
-      { $pull: { relations: { npcName: linkName } } },
-    );
-    await Npc.updateOne(
-      { guildId: interaction.guildId!, name },
-      { $push: { relations: { npcName: linkName, type: relType, notes: relNotes } } },
-    );
+    // Atomic pull-then-push in a single update via MongoDB's pipeline
+    // update syntax. Avoids the race where two concurrent link requests
+    // could both $pull then both $push, leaving duplicates.
+    await Npc.updateOne({ guildId: interaction.guildId!, name }, [
+      {
+        $set: {
+          relations: {
+            $filter: { input: "$relations", cond: { $ne: ["$$this.npcName", linkName] } },
+          },
+        },
+      },
+      {
+        $set: {
+          relations: {
+            $concatArrays: ["$relations", [{ npcName: linkName, type: relType, notes: relNotes }]],
+          },
+        },
+      },
+    ]);
 
     await interaction.editReply(
       `Linked **${name}** → **${linkName}** as *${REL_LABELS[relType] ?? relType}*${relNotes ? `: ${relNotes}` : ""}.`,
