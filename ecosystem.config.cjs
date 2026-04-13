@@ -3,9 +3,9 @@ module.exports = {
   apps : [{
     name: 'RollForge',
     cwd: '/opt/bots/RollForge',
-    script: 'pnpm',
-    args: 'start',
-    interpreter: 'none',
+    script: 'dist/index.js',
+    node_args: '--enable-source-maps',
+    interpreter: 'node',
     watch: false,
     autorestart: true,
     ignore_watch: ['node_modules','.git','package.json'],
