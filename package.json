@@ -38,6 +38,7 @@
     "mongodb": "7.1.1",
     "mongoose": "9.3.2",
     "openai": "6.32.0",
+    "p-limit": "^7.3.0",
     "winston": "3.17.0",
     "winston-transport": "^4.9.0",
     "zod": "4.3.6"

@@ -28,6 +28,11 @@ const Env = z.object({
   // GuildConfig; writes are rare (`/guildconfig` subcommands). 60s strikes
   // a balance between freshness and hot-path cost.
   GUILD_CONFIG_TTL_MS: z.coerce.number().default(60_000),
+
+  // Corpus ingest per-file concurrency (#72). Each file's OpenAI embed
+  // call is network-bound; 4 parallel workers typically cuts wall-time
+  // multi-fold on larger corpora with no risk to per-file atomicity.
+  INGEST_CONCURRENCY: z.coerce.number().int().positive().default(4),
 });
 
 export const env = Env.parse(process.env);
