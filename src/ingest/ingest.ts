@@ -10,6 +10,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import matter from "gray-matter";
 import fg from "fast-glob";
+import pLimit from "p-limit";
 
 type IngestOpts = {
   baseDir: string;
@@ -454,22 +455,31 @@ async function main() {
   const seen = new Set<string>();
   const stats = newStats();
 
-  for (const rel of relPaths) {
-    const abs = path.join(opts.baseDir, rel);
-    const ext = path.extname(rel).toLowerCase();
-
-    try {
-      if (ext === ".md" || ext === ".mdx") {
-        await upsertMarkdown(abs, rel, opts, seen, stats);
-      } else if (ext === ".txt") {
-        await upsertPlain(abs, rel, opts, seen, stats);
+  // Process files concurrently under a fixed-size worker pool (#72). Each
+  // file's upsert is its own critical section (delete+insert with hash
+  // recovery) and shares only the `seen`/`stats` mutables. Those are
+  // touched synchronously between awaits, so the JS single-threaded event
+  // loop keeps accumulation consistent. Concurrency is bounded by
+  // INGEST_CONCURRENCY so we don't stampede OpenAI or Mongo.
+  const limit = pLimit(env.INGEST_CONCURRENCY);
+  const tasks = relPaths.map((rel) =>
+    limit(async () => {
+      const abs = path.join(opts.baseDir, rel);
+      const ext = path.extname(rel).toLowerCase();
+      try {
+        if (ext === ".md" || ext === ".mdx") {
+          await upsertMarkdown(abs, rel, opts, seen, stats);
+        } else if (ext === ".txt") {
+          await upsertPlain(abs, rel, opts, seen, stats);
+        }
+      } catch (err) {
+        stats.docsFailed++;
+        stats.failedPaths.push(rel);
+        console.error(`✗ Failed to ingest ${rel}:`, err);
       }
-    } catch (err) {
-      stats.docsFailed++;
-      stats.failedPaths.push(rel);
-      console.error(`✗ Failed to ingest ${rel}:`, err);
-    }
-  }
+    }),
+  );
+  await Promise.all(tasks);
 
   if (opts.prune && !opts.dryRun) {
     await pruneMissing(opts.campaignId, seen);
