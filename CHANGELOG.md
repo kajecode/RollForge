@@ -5,6 +5,33 @@ All notable changes to RollForge are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/). Version
 numbers follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.4] - 2026-04-18
+
+Third Round-3 milestone ship (M3 RAG Quality). Shipped as two PRs but
+released together. **After upgrading, run `pnpm ingest` to re-chunk the
+corpus** — the new overlap parameters only apply to newly-ingested
+chunks.
+
+### Changed
+
+- **RAG chunks now actually overlap.** `simpleChunk` was advertised as
+  "~1200-char **overlapping**" in CLAUDE.md and the README since day 1
+  but the implementation had always been a plain fixed-width slice with
+  zero overlap. Facts that straddled a chunk boundary got split across
+  two chunks with no redundancy, hurting both keyword and vector recall
+  at boundary positions. Defaults: `maxChars=1200`, `overlap=150` →
+  stride 1050, so every chunk shares 150 chars of tail/head with its
+  neighbor. Requires `pnpm ingest` after deploy (#71)
+- **`$vectorSearch numCandidates`** widened from `Math.max(40, k*8)` to
+  `Math.max(150, k*20)`. At the `/rule` hot path (k=6) this grows the
+  candidate pool from 48 → 150, aligning with Atlas's recommended 10–
+  20× multiplier for HNSW graphs. Cost is all in-Atlas; the bill does
+  not scale with numCandidates (#76)
+- **`/rule` hybrid-query naming** clarified. Vector and keyword arms
+  intentionally receive different query strings (vector = prior turn +
+  current for coreference; keyword = current only for literal-term
+  relevance). Prior naming hid the intent. Zero behavioral change (#77)
+
 ## [2.1.3] - 2026-04-18
 
 Second Round-3 milestone ship (M2 Per-interaction Latency). Six
