@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const sessionFindOne = vi.fn();
 const sessionFindOneAndUpdate = vi.fn();
 const sessionFind = vi.fn();
+const sessionAggregate = vi.fn();
 const sessionUpdateOne = vi.fn();
 const sessionDeleteOne = vi.fn();
 
@@ -14,6 +15,7 @@ vi.mock("@/db/models/Sessions.js", () => ({
     findOne: (...args: any[]) => sessionFindOne(...args),
     findOneAndUpdate: (...args: any[]) => sessionFindOneAndUpdate(...args),
     find: (...args: any[]) => sessionFind(...args),
+    aggregate: (...args: any[]) => sessionAggregate(...args),
     updateOne: (...args: any[]) => sessionUpdateOne(...args),
     deleteOne: (...args: any[]) => sessionDeleteOne(...args),
   },
@@ -136,5 +138,56 @@ describe("/session forget (#19)", () => {
     expect(documentDeleteOne).not.toHaveBeenCalled();
     const reply = String(interaction.editReply.mock.calls[0][0]);
     expect(reply).toMatch(/No session or ingested doc found/);
+  });
+});
+
+describe("/session list (#74 — projected aggregate)", () => {
+  it("renders summary lines from projected noteCount/hasSummary", async () => {
+    sessionAggregate.mockResolvedValue([
+      {
+        title: "The Dragon's Lair",
+        sessionDate: new Date("2026-04-10"),
+        hasSummary: true,
+        noteCount: 5,
+      },
+      {
+        title: "Rest Day",
+        sessionDate: new Date("2026-04-03"),
+        hasSummary: false,
+        noteCount: 1,
+      },
+    ]);
+
+    const interaction = makeInteraction("list");
+    await sessionCmd(interaction);
+
+    // Projection stage is what avoids shipping full notes array.
+    const pipeline = sessionAggregate.mock.calls[0][0];
+    const project = pipeline.find((s: any) => s.$project);
+    expect(project).toBeDefined();
+    expect(project.$project).toMatchObject({
+      title: 1,
+      sessionDate: 1,
+    });
+    expect(project.$project.noteCount).toBeDefined();
+    expect(project.$project.hasSummary).toBeDefined();
+
+    const reply = String(interaction.editReply.mock.calls[0][0]);
+    expect(reply).toContain("The Dragon's Lair");
+    expect(reply).toContain("5 notes");
+    expect(reply).toContain("summarized");
+    expect(reply).toContain("Rest Day");
+    expect(reply).toContain("1 note");
+    expect(reply).not.toContain("1 notes");
+  });
+
+  it("reports empty state when no sessions logged", async () => {
+    sessionAggregate.mockResolvedValue([]);
+
+    const interaction = makeInteraction("list");
+    await sessionCmd(interaction);
+
+    const reply = String(interaction.editReply.mock.calls[0][0]);
+    expect(reply).toMatch(/No sessions logged yet/);
   });
 });

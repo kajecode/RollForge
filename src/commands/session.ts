@@ -157,10 +157,27 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
 
   // ── list ──────────────────────────────────────────────────────────────────
   if (sub === "list") {
-    const sessions = (await Session.find({ guildId, campaignId })
-      .sort({ sessionDate: -1 })
-      .limit(20)
-      .lean()) as any[];
+    // Project only what the summary line renders (#74). A full `.find().lean()`
+    // would ship every note body + full summary over the wire just to render
+    // a one-line summary per session.
+    const sessions = (await Session.aggregate([
+      { $match: { guildId, campaignId } },
+      { $sort: { sessionDate: -1 } },
+      { $limit: 20 },
+      {
+        $project: {
+          title: 1,
+          sessionDate: 1,
+          hasSummary: { $gt: [{ $strLenCP: { $ifNull: ["$summary", ""] } }, 0] },
+          noteCount: { $size: { $ifNull: ["$notes", []] } },
+        },
+      },
+    ])) as Array<{
+      title: string;
+      sessionDate: Date;
+      hasSummary: boolean;
+      noteCount: number;
+    }>;
 
     if (!sessions.length) {
       await interaction.editReply("No sessions logged yet.");
@@ -169,7 +186,7 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
 
     const lines = sessions.map(
       (s) =>
-        `• **${s.title}** — ${new Date(s.sessionDate).toLocaleDateString()} (${s.notes.length} note${s.notes.length !== 1 ? "s" : ""}${s.summary ? ", summarized" : ""})`,
+        `• **${s.title}** — ${new Date(s.sessionDate).toLocaleDateString()} (${s.noteCount} note${s.noteCount !== 1 ? "s" : ""}${s.hasSummary ? ", summarized" : ""})`,
     );
     await interaction.editReply(lines.join("\n"));
     return;

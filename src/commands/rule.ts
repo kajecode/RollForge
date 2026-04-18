@@ -69,8 +69,13 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   const lastUserTurn = [...history].reverse().find((t) => t.role === "user")?.content;
   const embeddingQuery = lastUserTurn ? `${lastUserTurn} ${q}` : q;
 
-  const visibility = await visibilityForInteraction(interaction.member as any, channelId);
-  const [qv] = await embed([embeddingQuery]);
+  // Embed + visibility lookups are independent: visibility only needs the
+  // interaction, embedding only needs the query. Running them in parallel
+  // saves one network-bound await on every /rule (#68).
+  const [visibility, [qv]] = await Promise.all([
+    visibilityForInteraction(interaction.member as any, channelId),
+    embed([embeddingQuery]),
+  ]);
   const hits = await hybridSearch(q, qv, { k: 6, visibility });
 
   const context = hits

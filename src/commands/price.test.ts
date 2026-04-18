@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// `itemFindOne` is now expected to resolve with the final leaned doc — the
+// code chains `.select().lean()` on the Query. We mimic the chain via a thin
+// query stub so tests stay focused on the return value.
 const itemFindOne = vi.fn();
+function queryStub(value: unknown) {
+  return {
+    select: () => ({ lean: async () => value }),
+  };
+}
 vi.mock("@/db/models/Items.js", () => ({
   default: {
     findOne: (...args: any[]) => itemFindOne(...args),
@@ -43,11 +51,13 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("/price", () => {
   it("returns the basePriceGP when the item is found in the DB", async () => {
-    itemFindOne.mockResolvedValueOnce({
-      name: "Longsword",
-      basePriceGP: 15,
-      priceSource: "srd",
-    });
+    itemFindOne.mockReturnValueOnce(
+      queryStub({
+        name: "Longsword",
+        basePriceGP: 15,
+        priceSource: "srd",
+      }),
+    );
 
     const interaction = makeInteraction("Longsword");
     await priceCmd(interaction);
@@ -60,12 +70,14 @@ describe("/price", () => {
   });
 
   it("returns rarity band estimate for magic items without a basePriceGP", async () => {
-    itemFindOne.mockResolvedValueOnce({
-      name: "Cloak of Protection",
-      basePriceGP: null,
-      isMagic: true,
-      rarity: "common",
-    });
+    itemFindOne.mockReturnValueOnce(
+      queryStub({
+        name: "Cloak of Protection",
+        basePriceGP: null,
+        isMagic: true,
+        rarity: "common",
+      }),
+    );
 
     const interaction = makeInteraction("Cloak of Protection");
     await priceCmd(interaction);
@@ -77,7 +89,7 @@ describe("/price", () => {
   });
 
   it("falls back to LLM estimation when item is not in the DB", async () => {
-    itemFindOne.mockResolvedValue(null);
+    itemFindOne.mockReturnValue(queryStub(null));
 
     const interaction = makeInteraction("Mysterious Widget");
     await priceCmd(interaction);
@@ -88,12 +100,14 @@ describe("/price", () => {
   });
 
   it("falls back to LLM for a text-search match with no basePriceGP and non-magic", async () => {
-    itemFindOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
-      name: "Odd Trinket",
-      basePriceGP: null,
-      isMagic: false,
-      rarity: "none",
-    });
+    itemFindOne.mockReturnValueOnce(queryStub(null)).mockReturnValueOnce(
+      queryStub({
+        name: "Odd Trinket",
+        basePriceGP: null,
+        isMagic: false,
+        rarity: "none",
+      }),
+    );
 
     const interaction = makeInteraction("Odd Trinket");
     await priceCmd(interaction);
@@ -102,7 +116,7 @@ describe("/price", () => {
   });
 
   it("reports service unavailable when LLM throws", async () => {
-    itemFindOne.mockResolvedValue(null);
+    itemFindOne.mockReturnValue(queryStub(null));
     completeMock.mockRejectedValueOnce(new Error("timeout"));
 
     const interaction = makeInteraction("Unknown Item");

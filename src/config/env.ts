@@ -23,6 +23,11 @@ const Env = z.object({
   MODEL_TEXT: z.string().default("gpt-4o-mini"),
   MODEL_EMBED: z.string().default("text-embedding-3-small"),
   EMBED_DIM: z.coerce.number().default(1536),
+
+  // GuildConfig read-through TTL cache (#67). Every slash command reads
+  // GuildConfig; writes are rare (`/guildconfig` subcommands). 60s strikes
+  // a balance between freshness and hot-path cost.
+  GUILD_CONFIG_TTL_MS: z.coerce.number().default(60_000),
 });
 
 export const env = Env.parse(process.env);

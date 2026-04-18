@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, PermissionFlagsBits } from "discord.js";
 import GuildConfig, { GuildConfigDoc } from "@/db/models/GuildConfig";
 import Regions from "@/db/models/Regions";
+import { invalidateGuildConfig } from "@/services/guild";
 
 export default async function guildconfig(interaction: ChatInputCommandInteraction) {
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
@@ -18,6 +19,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
       { $set: { [`rarityOverrides.${name}`]: { min, max } } },
       { upsert: true, returnDocument: "after" },
     );
+    invalidateGuildConfig(interaction.guildId!);
     return interaction.editReply(`Set **${name}** to ${min}-${max} gp.`);
   }
 
@@ -32,6 +34,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
       { $set: { allowedRegions: arr } },
       { upsert: true, returnDocument: "after" },
     );
+    invalidateGuildConfig(interaction.guildId!);
     return interaction.editReply(`Allowed regions: ${doc.allowedRegions.join(", ") || "(none)"}.`);
   }
 
@@ -66,6 +69,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
       { $set: { [`economy.settlementRules.${size}`]: { gpCap, itemsMin, itemsMax } } },
       { upsert: true, returnDocument: "after" },
     );
+    invalidateGuildConfig(interaction.guildId!);
     return interaction.editReply(
       `Set **${size}** stocking rule: gp cap **${gpCap}**, items **${itemsMin}**–**${itemsMax}**.`,
     );
@@ -102,6 +106,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
       { $set: update },
       { upsert: true, returnDocument: "after" },
     );
+    invalidateGuildConfig(interaction.guildId!);
 
     const gmRoleText = doc.gmRoleId ? `<@&${doc.gmRoleId}>` : "(none)";
     const chText =
