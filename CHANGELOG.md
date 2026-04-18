@@ -5,6 +5,28 @@ All notable changes to RollForge are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/). Version
 numbers follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.2] - 2026-04-18
+
+First Round-3 milestone ship (M1 Correctness). Three latent bugs that
+slipped past the first two audit passes.
+
+### Fixed
+
+- **`/guildconfig set region:<slug>`** now actually persists. Previously
+  wrote to a non-existent `defaultRegion` field, so every consumer
+  silently ignored the value. Now writes to `defaultRegionTag` in the
+  schema-documented `"region:<slug>"` format and validates the slug
+  against `Regions` before writing (#65)
+- **`/shop` region validation** standardized on slug. Previously the
+  command validated by `name` while `generateStock` resolved by `slug`,
+  so regions with `name != slug` failed one of the two checks. The
+  region autocomplete now submits the slug as the option value while
+  still displaying the friendly name (#66)
+- **`DiscordChannelTransport`** surfaces send failures. The empty
+  `catch (_) {}` that silently swallowed every Discord send error has
+  been replaced with a first-failure-to-stderr + 60s suppression window,
+  so misconfigured error channels are no longer invisible (#70)
+
 ## [2.1.1] - 2026-04-18
 
 ### Security
