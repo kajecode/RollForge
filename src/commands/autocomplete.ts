@@ -63,14 +63,17 @@ export async function handleAutocomplete(interaction: AutocompleteInteraction) {
       choices = items.map((i) => ({ name: i.name, value: i.name }));
     }
 
-    // region autocomplete (shop, shops, npc)
+    // region autocomplete (shop, shops, npc) — users see the region name,
+    // value submitted is the slug so downstream slug-based lookups (shop
+    // validation, generateStock) work for any region where name != slug.
+    // See issue #66.
     else if (focused.name === "region") {
       const regions = await Regions.find(prefix ? { name: prefix } : {})
         .collation(CI_COLLATION)
         .limit(25)
-        .select("name")
-        .lean<{ name: string }[]>();
-      choices = regions.map((r) => ({ name: r.name, value: r.name }));
+        .select("name slug")
+        .lean<{ name: string; slug: string }[]>();
+      choices = regions.map((r) => ({ name: r.name, value: r.slug }));
     }
 
     // town autocomplete (shops list)
