@@ -5,6 +5,18 @@ All notable changes to RollForge are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/). Version
 numbers follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.1] - 2026-04-18
+
+### Security
+
+- **fix(deps):** Resolve 8 high-severity CVEs via dependency upgrades and
+  pnpm overrides (#64)
+
+### Fixed
+
+- **PM2 ecosystem config** corrected so `pnpm start` launches the bot
+  under PM2 as expected
+
 ## [2.1.0] - 2026-04-12
 
 First release after the 26-finding code review + Atlas diagnostic + second-pass
