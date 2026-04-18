@@ -143,10 +143,15 @@ export async function generateStock(params: GenerateStockParams): Promise<Genera
   let candidates: ItemDoc[] = [];
 
   if (regionId) {
-    const local = await Item.find({ ...baseQuery, regions: { $in: [regionId] } })
-      .limit(Math.ceil(fetchTarget * 0.6))
-      .lean<ItemDoc[]>();
-    const global = await Item.find(baseQuery).limit(fetchTarget).lean<ItemDoc[]>();
+    // Local (region-tagged) and global candidate queries are independent —
+    // same base filter, only the regions $in differs. Running them in
+    // parallel halves p50 latency when a region is supplied (#69).
+    const [local, global] = await Promise.all([
+      Item.find({ ...baseQuery, regions: { $in: [regionId] } })
+        .limit(Math.ceil(fetchTarget * 0.6))
+        .lean<ItemDoc[]>(),
+      Item.find(baseQuery).limit(fetchTarget).lean<ItemDoc[]>(),
+    ]);
 
     const seen = new Set(local.map((i) => i.slug));
     const merged = [...local];

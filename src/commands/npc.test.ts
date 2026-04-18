@@ -1,15 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const npcFindOne = vi.fn();
+const npcFind = vi.fn();
 const npcUpdateOne = vi.fn();
 const npcFindOneAndUpdate = vi.fn();
 vi.mock("@/db/models/Npcs.js", () => ({
   default: {
     findOne: (...args: any[]) => npcFindOne(...args),
+    find: (...args: any[]) => npcFind(...args),
     updateOne: (...args: any[]) => npcUpdateOne(...args),
     findOneAndUpdate: (...args: any[]) => npcFindOneAndUpdate(...args),
   },
 }));
+
+function findQueryStub(rows: Array<{ name: string }>) {
+  return { select: () => ({ lean: async () => rows }) };
+}
 
 const shopFindOneAndUpdate = vi.fn();
 vi.mock("@/db/models/Shop.js", () => ({
@@ -54,7 +60,7 @@ beforeEach(() => {
 describe("/npc", () => {
   describe("link mode", () => {
     it("links two existing NPCs with an atomic pipeline update", async () => {
-      npcFindOne.mockResolvedValueOnce({ name: "Alice" }).mockResolvedValueOnce({ name: "Bob" });
+      npcFind.mockReturnValueOnce(findQueryStub([{ name: "Alice" }, { name: "Bob" }]));
 
       const interaction = makeInteraction({
         name: "Alice",
@@ -64,6 +70,11 @@ describe("/npc", () => {
       });
       await npcCmd(interaction);
 
+      expect(npcFind).toHaveBeenCalledTimes(1);
+      expect(npcFind.mock.calls[0][0]).toEqual({
+        guildId: "g1",
+        name: { $in: ["Alice", "Bob"] },
+      });
       expect(npcUpdateOne).toHaveBeenCalledTimes(1);
       const [filter, pipeline] = npcUpdateOne.mock.calls[0];
       expect(filter).toEqual({ guildId: "g1", name: "Alice" });
@@ -76,7 +87,7 @@ describe("/npc", () => {
     });
 
     it("rejects when the source NPC is not found", async () => {
-      npcFindOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ name: "Bob" });
+      npcFind.mockReturnValueOnce(findQueryStub([{ name: "Bob" }]));
 
       const interaction = makeInteraction({ name: "Ghost", link: "Bob", rel_type: "ally" });
       await npcCmd(interaction);
@@ -87,13 +98,25 @@ describe("/npc", () => {
     });
 
     it("rejects when the target NPC is not found", async () => {
-      npcFindOne.mockResolvedValueOnce({ name: "Alice" }).mockResolvedValueOnce(null);
+      npcFind.mockReturnValueOnce(findQueryStub([{ name: "Alice" }]));
 
       const interaction = makeInteraction({ name: "Alice", link: "Ghost", rel_type: "ally" });
       await npcCmd(interaction);
 
       const reply = String(interaction.editReply.mock.calls[0][0]);
       expect(reply).toMatch(/Ghost.*not found/);
+    });
+
+    it("rejects when both NPCs are missing, listing both", async () => {
+      npcFind.mockReturnValueOnce(findQueryStub([]));
+
+      const interaction = makeInteraction({ name: "Ghost1", link: "Ghost2", rel_type: "ally" });
+      await npcCmd(interaction);
+
+      const reply = String(interaction.editReply.mock.calls[0][0]);
+      expect(reply).toMatch(/Ghost1/);
+      expect(reply).toMatch(/Ghost2/);
+      expect(npcUpdateOne).not.toHaveBeenCalled();
     });
   });
 

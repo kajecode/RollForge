@@ -28,16 +28,20 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
 
   // Link mode: add a relationship between two saved NPCs
   if (name && linkName && relType) {
-    const [npcA, npcB] = await Promise.all([
-      Npc.findOne({ guildId: interaction.guildId!, name }),
-      Npc.findOne({ guildId: interaction.guildId!, name: linkName }),
-    ]);
-    if (!npcA) {
-      await interaction.editReply(`NPC **${name}** not found. Save them first.`);
-      return;
-    }
-    if (!npcB) {
-      await interaction.editReply(`NPC **${linkName}** not found. Save them first.`);
+    // One projected query instead of two parallel findOnes (#75). Still
+    // identifies exactly which NPC is missing by diffing returned names.
+    const found = await Npc.find({
+      guildId: interaction.guildId!,
+      name: { $in: [name, linkName] },
+    })
+      .select("name")
+      .lean<{ name: string }[]>();
+    const missing = [name, linkName].filter((n) => !found.some((f) => f.name === n));
+    if (missing.length) {
+      const label = missing.map((n) => `**${n}**`).join(", ");
+      await interaction.editReply(
+        `NPC ${label} not found. Save them first with \`/npc save:true\`.`,
+      );
       return;
     }
 

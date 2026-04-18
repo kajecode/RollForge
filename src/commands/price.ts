@@ -10,10 +10,17 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
 
   const slug = toSlug(itemName);
-  let item = await Item.findOne({ slug });
+  // Only these fields are rendered — project to keep the payload small and
+  // avoid hydrating a full Mongoose doc on the hot path (#73).
+  const ITEM_PROJECTION = "name basePriceGP priceSource isMagic rarity slug";
+  let item = await Item.findOne({ slug }).select(ITEM_PROJECTION).lean<any>();
 
   // fuzzy fallback by name text search
-  if (!item) item = await Item.findOne({ $text: { $search: itemName } });
+  if (!item) {
+    item = await Item.findOne({ $text: { $search: itemName } })
+      .select(ITEM_PROJECTION)
+      .lean<any>();
+  }
 
   if (item) {
     if (item.basePriceGP != null) {
