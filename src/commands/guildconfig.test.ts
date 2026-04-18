@@ -9,6 +9,13 @@ vi.mock("@/db/models/GuildConfig.js", () => ({
   },
 }));
 
+const regionsExists = vi.fn();
+vi.mock("@/db/models/Regions.js", () => ({
+  default: {
+    exists: (...args: any[]) => regionsExists(...args),
+  },
+}));
+
 import guildconfig from "./guildconfig.js";
 
 function makeInteraction(sub: string, opts: Record<string, any> = {}) {
@@ -81,7 +88,7 @@ describe("/guildconfig", () => {
       guildConfigFindOneAndUpdate.mockResolvedValue({
         economyMultiplier: 1.5,
         gmRoleId: null,
-        defaultRegion: null,
+        defaultRegionTag: null,
         playerChannelIds: [],
       });
       const interaction = makeInteraction("set", { economy: 1.5 });
@@ -89,6 +96,37 @@ describe("/guildconfig", () => {
 
       const setArg = guildConfigFindOneAndUpdate.mock.calls[0][1];
       expect(setArg.$set.economyMultiplier).toBe(1.5);
+    });
+
+    it("persists a valid region as defaultRegionTag with region: prefix", async () => {
+      regionsExists.mockResolvedValue({ _id: "r1" });
+      guildConfigFindOneAndUpdate.mockResolvedValue({
+        economyMultiplier: 1,
+        gmRoleId: null,
+        defaultRegionTag: "region:moonshadow-docks",
+        playerChannelIds: [],
+      });
+      const interaction = makeInteraction("set", { region: "moonshadow-docks" });
+      await guildconfig(interaction);
+
+      expect(regionsExists).toHaveBeenCalledWith({ slug: "moonshadow-docks" });
+      const setArg = guildConfigFindOneAndUpdate.mock.calls[0][1];
+      expect(setArg.$set.defaultRegionTag).toBe("region:moonshadow-docks");
+      expect(setArg.$set.defaultRegion).toBeUndefined();
+      const reply = String(interaction.editReply.mock.calls[0][0]);
+      expect(reply).toMatch(/Default Region.*moonshadow-docks/);
+    });
+
+    it("rejects an unknown region slug without writing", async () => {
+      regionsExists.mockResolvedValue(null);
+      const interaction = makeInteraction("set", { region: "not-a-real-slug" });
+      await guildconfig(interaction);
+
+      expect(regionsExists).toHaveBeenCalledWith({ slug: "not-a-real-slug" });
+      expect(guildConfigFindOneAndUpdate).not.toHaveBeenCalled();
+      const reply = String(interaction.editReply.mock.calls[0][0]);
+      expect(reply).toMatch(/not-a-real-slug/);
+      expect(reply).toMatch(/not found/);
     });
   });
 
@@ -149,6 +187,7 @@ describe("/guildconfig", () => {
           playerChannelIds: ["chan-1"],
           allowedRegions: ["eryndor"],
           rarityOverrides: {},
+          defaultRegionTag: "region:southwatch",
         }),
       });
       const interaction = makeInteraction("view");
@@ -158,6 +197,8 @@ describe("/guildconfig", () => {
       expect(reply).toContain("1.2");
       expect(reply).toContain("role-1");
       expect(reply).toContain("eryndor");
+      expect(reply).toMatch(/Default Region.*southwatch/);
+      expect(reply).not.toContain("region:southwatch");
     });
 
     it("handles missing config gracefully", async () => {

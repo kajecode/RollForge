@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, PermissionFlagsBits } from "discord.js";
 import GuildConfig, { GuildConfigDoc } from "@/db/models/GuildConfig";
+import Regions from "@/db/models/Regions";
 
 export default async function guildconfig(interaction: ChatInputCommandInteraction) {
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
@@ -79,7 +80,15 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
     const update: Record<string, any> = {};
     if (economy !== null && economy !== undefined) update.economyMultiplier = economy;
     if (gmRole) update.gmRoleId = gmRole.id;
-    if (region) update.defaultRegion = region;
+    if (region) {
+      const exists = await Regions.exists({ slug: region });
+      if (!exists) {
+        return interaction.editReply(
+          `Region slug **${region}** not found. Use autocomplete or \`/guildconfig view\`.`,
+        );
+      }
+      update.defaultRegionTag = `region:${region}`;
+    }
     if (playerChannels) {
       const ids = playerChannels
         .split(",")
@@ -99,13 +108,16 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
       Array.isArray(doc.playerChannelIds) && doc.playerChannelIds.length
         ? doc.playerChannelIds.map((id: string) => `<#${id}>`).join(", ")
         : "(none)";
+    const defaultRegionText = doc.defaultRegionTag?.startsWith("region:")
+      ? doc.defaultRegionTag.slice("region:".length)
+      : (doc.defaultRegionTag ?? "(unset)");
 
     return interaction.editReply(
       [
         "✅ **Guild config updated**",
         `• Economy Multiplier: **${doc.economyMultiplier ?? "(unset)"}**`,
         `• GM Role: ${gmRoleText}`,
-        `• Default Region: **${doc.defaultRegion ?? "(unset)"}**`,
+        `• Default Region: **${defaultRegionText}**`,
         `• Player Channels: ${chText}`,
       ].join("\n"),
     );
@@ -126,6 +138,9 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
       Array.isArray(doc.allowedRegions) && doc.allowedRegions.length
         ? doc.allowedRegions.join(", ")
         : "(none)";
+    const defaultRegionText = doc.defaultRegionTag?.startsWith("region:")
+      ? doc.defaultRegionTag.slice("region:".length)
+      : (doc.defaultRegionTag ?? "(unset)");
     const rarity = doc.rarityOverrides || {};
     const rarityLines = Object.keys(rarity).length
       ? Object.entries(rarity)
@@ -138,6 +153,7 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
         "**Guild Configuration**",
         `• Economy Multiplier: **${doc.economyMultiplier ?? 1}**`,
         `• GM Role: ${gmRoleText}`,
+        `• Default Region: **${defaultRegionText}**`,
         `• Player Channels: ${chText}`,
         `• Allowed Regions: ${regionsText}`,
         `• Rarity Overrides:\n${rarityLines}`,

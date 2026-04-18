@@ -56,9 +56,11 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
       : null);
 
   if (region) {
-    const exists = await Regions.exists({ name: region });
+    const exists = await Regions.exists({ slug: region });
     if (!exists) {
-      await interaction.editReply(`Region **${region}** not found in database.`);
+      await interaction.editReply(
+        `Region slug **${region}** not found in database. Use autocomplete to pick a valid region.`,
+      );
       return;
     }
   }
