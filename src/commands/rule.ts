@@ -66,15 +66,24 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   const channelId = interaction.channelId;
   const history = getHistory(userId, channelId);
 
+  // Hybrid search uses two *intentionally different* query strings on its
+  // vector vs keyword arms (#77). The vector arm benefits from the prior
+  // user turn as coreference context ("what about the barbarian then?"
+  // resolves through the previous turn). The keyword arm matches literal
+  // terms against Atlas Search — mixing in last turn's text would dilute
+  // the relevance signal for specific nouns the player just typed.
+  //   - vectorQuery = lastUserTurn + q   → fed into embed()
+  //   - queryText   = q                   → fed into keywordSearch
+  // Token cost of the context concat is bounded by MAX_QUERY_CHARS per turn.
   const lastUserTurn = [...history].reverse().find((t) => t.role === "user")?.content;
-  const embeddingQuery = lastUserTurn ? `${lastUserTurn} ${q}` : q;
+  const vectorQuery = lastUserTurn ? `${lastUserTurn} ${q}` : q;
 
   // Embed + visibility lookups are independent: visibility only needs the
   // interaction, embedding only needs the query. Running them in parallel
   // saves one network-bound await on every /rule (#68).
   const [visibility, [qv]] = await Promise.all([
     visibilityForInteraction(interaction.member as any, channelId),
-    embed([embeddingQuery]),
+    embed([vectorQuery]),
   ]);
   const hits = await hybridSearch(q, qv, { k: 6, visibility });
 

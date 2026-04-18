@@ -4,6 +4,13 @@ import { rrfMerge } from "./rerank";
 
 type SearchOpts = { k?: number; visibility?: ("gm" | "players" | "public")[] };
 
+// Atlas $vectorSearch recommends numCandidates of 10–20× the requested
+// limit for HNSW graphs. At the /rule hot path (k=6), the prior 8× gave
+// only 48 candidates — measurable recall loss. Bumping to 20× (min 150)
+// is all in-Atlas; the Atlas bill does not scale with numCandidates. (#76)
+const VECTOR_NUM_CANDIDATES_MULTIPLIER = 20;
+const VECTOR_NUM_CANDIDATES_MIN = 150;
+
 export async function vectorSearch(queryEmbedding: number[], opts: SearchOpts = {}) {
   const k = opts.k ?? 6;
 
@@ -15,7 +22,7 @@ export async function vectorSearch(queryEmbedding: number[], opts: SearchOpts = 
         index: "default",
         path: "embedding",
         queryVector: queryEmbedding,
-        numCandidates: Math.max(40, k * 8),
+        numCandidates: Math.max(VECTOR_NUM_CANDIDATES_MIN, k * VECTOR_NUM_CANDIDATES_MULTIPLIER),
         limit: k,
         similarity: "cosine",
         ...(filter ? { filter } : {}),
