@@ -5,6 +5,39 @@ All notable changes to RollForge are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/). Version
 numbers follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.3] - 2026-04-18
+
+Second Round-3 milestone ship (M2 Per-interaction Latency). Six
+optimizations to the hot path that runs on every slash command.
+
+### Added
+
+- **`GUILD_CONFIG_TTL_MS`** env var (default `60000`). Tunes the TTL
+  for the new GuildConfig read-through cache (#67)
+
+### Changed
+
+- **GuildConfig** is now cached with a 60s TTL. Every slash command
+  that reads guild state (`/rule`, `/shop`, `/price`, `/npc`, `/scene`,
+  `/shops`, `/session`) saves one Mongo RTT per invocation after the
+  first hit. `/guildconfig` writes invalidate the cache on the spot
+  so next-command reads see fresh state (#67)
+- **`/rule`** runs `embed()` and `visibilityForInteraction()` in
+  parallel instead of sequentially, saving one network-bound await
+  per rule lookup (#68)
+- **`stockGenerator`** runs the local + global `Item.find` candidate
+  queries in parallel when a region is supplied, halving p50 shop
+  generation latency on region-scoped calls (#69)
+- **`/price`** projects only the fields the renderer reads and uses
+  `.lean()` on both `findOne` paths instead of hydrating the full
+  Mongoose document (#73)
+- **`/session list`** uses an aggregate with `$project + $size` so
+  full notes arrays are no longer shipped over the wire just to
+  render a one-line summary per session (#74)
+- **`/npc` link mode** replaces two parallel preflight `findOne` calls
+  with a single projected `.find({ name: $in })` that still identifies
+  exactly which NPC(s) are missing (#75)
+
 ## [2.1.2] - 2026-04-18
 
 First Round-3 milestone ship (M1 Correctness). Three latent bugs that
