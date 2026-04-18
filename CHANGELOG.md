@@ -5,6 +5,28 @@ All notable changes to RollForge are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/). Version
 numbers follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.5] - 2026-04-18
+
+Fourth Round-3 milestone ship (M4 Ingest Throughput). Single-issue
+milestone.
+
+### Added
+
+- **`INGEST_CONCURRENCY`** env var (default `4`). Controls corpus
+  ingest parallelism (#72)
+- **`.env.example`** now documents `INGEST_CONCURRENCY` and the
+  `GUILD_CONFIG_TTL_MS` var from v2.1.3
+
+### Changed
+
+- **Corpus ingest is now parallel.** `pnpm ingest` previously processed
+  files strictly serially; each file's OpenAI `batchEmbed` call (200–
+  800ms typical) blocked the next file. The new `p-limit(4)` worker
+  pool cuts wall-time multi-fold on larger corpora with no risk to
+  per-file atomicity — each delete+insert critical section still lives
+  inside its own promise with hash-invalidation recovery on failure.
+  Tune via `INGEST_CONCURRENCY` (#72)
+
 ## [2.1.4] - 2026-04-18
 
 Third Round-3 milestone ship (M3 RAG Quality). Shipped as two PRs but
