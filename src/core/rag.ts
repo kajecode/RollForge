@@ -30,6 +30,16 @@ export async function vectorSearch(queryEmbedding: number[], opts: SearchOpts = 
     },
     // Additional filtering allowed AFTER $vectorSearch if needed
     // ...(opts.visibility?.length ? [{ $match: { visibility: { $in: opts.visibility } } }] : []),
+    // Join the owning Document to pull sourceUrl for clickable citations (#87).
+    {
+      $lookup: {
+        from: "documents",
+        localField: "documentId",
+        foreignField: "_id",
+        as: "_doc",
+        pipeline: [{ $project: { sourceUrl: 1 } }],
+      },
+    },
     {
       $project: {
         _id: 1,
@@ -38,6 +48,7 @@ export async function vectorSearch(queryEmbedding: number[], opts: SearchOpts = 
         documentId: 1,
         visibility: 1,
         score: { $meta: "vectorSearchScore" },
+        sourceUrl: { $arrayElemAt: ["$_doc.sourceUrl", 0] },
       },
     },
   ];
@@ -49,6 +60,7 @@ export async function vectorSearch(queryEmbedding: number[], opts: SearchOpts = 
     documentId: mongoose.Types.ObjectId;
     visibility: string;
     score: number;
+    sourceUrl?: string;
   }>;
 }
 
@@ -65,6 +77,15 @@ export async function keywordSearch(queryText: string, opts: SearchOpts = {}) {
     ...(opts.visibility?.length ? [{ $match: { visibility: { $in: opts.visibility } } }] : []),
     { $limit: k },
     {
+      $lookup: {
+        from: "documents",
+        localField: "documentId",
+        foreignField: "_id",
+        as: "_doc",
+        pipeline: [{ $project: { sourceUrl: 1 } }],
+      },
+    },
+    {
       $project: {
         _id: 1,
         text: 1,
@@ -72,6 +93,7 @@ export async function keywordSearch(queryText: string, opts: SearchOpts = {}) {
         documentId: 1,
         visibility: 1,
         score: { $meta: "searchScore" },
+        sourceUrl: { $arrayElemAt: ["$_doc.sourceUrl", 0] },
       },
     },
   ];
@@ -83,6 +105,7 @@ export async function keywordSearch(queryText: string, opts: SearchOpts = {}) {
     documentId: mongoose.Types.ObjectId;
     visibility: string;
     score: number;
+    sourceUrl?: string;
   }>;
 }
 

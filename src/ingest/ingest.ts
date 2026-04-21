@@ -6,7 +6,9 @@ import Chunk from "@/db/models/Chunks";
 import { env } from "@/config/env";
 
 import fs from "node:fs";
+import { promises as fsPromises } from "node:fs";
 import path from "node:path";
+import pathModule from "node:path";
 import crypto from "node:crypto";
 import matter from "gray-matter";
 import fg from "fast-glob";
@@ -175,6 +177,14 @@ async function upsertMarkdown(
   const fmTags = normalizeTags(fm.tags);
   const pathTags = tagsFromPath(relPath);
   const tags = normalizeTags([...fmTags, ...pathTags]);
+  // Optional canonical URL for clickable `/rule` citations (#87).
+  // Accepts either `sourceUrl` or `url` in frontmatter.
+  const sourceUrl =
+    typeof fm.sourceUrl === "string"
+      ? fm.sourceUrl
+      : typeof fm.url === "string"
+        ? fm.url
+        : undefined;
 
   // Mark this source as present this run
   seen.add(relPath);
@@ -198,6 +208,7 @@ async function upsertMarkdown(
             tags,
             campaignId: opts.campaignId,
             source: relPath,
+            ...(sourceUrl ? { sourceUrl } : {}),
             contentHash,
             updatedAt: new Date(),
           },
@@ -403,6 +414,42 @@ function formatUsd(amount: number | null): string {
   return `$${amount.toFixed(2)}`;
 }
 
+// Append a structured record for this run to logs/ingest-YYYY-MM-DD.jsonl
+// so CI / cron can trend token cost and surface persistent failures (#88).
+// Rotation is day-based; users who run multiple ingests per day get
+// multiple records in the same file (one per line). Silently skips writes
+// in dry-run mode — stats are approximate there and writing them would
+// muddy trend analysis.
+async function writeRunLog(stats: IngestStats, opts: IngestOpts) {
+  if (opts.dryRun) return;
+  const record = {
+    startedAt: ingestStartedAt,
+    finishedAt: new Date().toISOString(),
+    campaignId: opts.campaignId,
+    baseDir: opts.baseDir,
+    docsSeen: stats.docsSeen,
+    docsIngested: stats.docsIngested,
+    docsSkipped: stats.docsSkipped,
+    docsCleared: stats.docsCleared,
+    docsFailed: stats.docsFailed,
+    failedPaths: stats.failedPaths,
+    chunks: stats.chunks,
+    tokens: stats.tokens,
+    estimatedUSD: stats.estimatedUSD,
+    model: env.MODEL_EMBED,
+  };
+  const logDir = process.env.INGEST_LOG_DIR ?? "logs";
+  const day = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const logPath = pathModule.join(logDir, `ingest-${day}.jsonl`);
+  try {
+    await fsPromises.mkdir(logDir, { recursive: true });
+    await fsPromises.appendFile(logPath, JSON.stringify(record) + "\n", "utf8");
+  } catch (err) {
+    // Best-effort: a failed log write should not fail the ingest run.
+    console.error(`Failed to append ingest log to ${logPath}:`, err);
+  }
+}
+
 function printSummary(stats: IngestStats, opts: IngestOpts) {
   const model = env.MODEL_EMBED;
   const rate = PRICE_PER_MILLION_INPUT_TOKENS[model];
@@ -433,7 +480,13 @@ function printSummary(stats: IngestStats, opts: IngestOpts) {
   }
 }
 
+// Set at the start of main() so writeRunLog can record the run's start
+// timestamp. Module-level (rather than thread-through) because main() is
+// the only caller.
+let ingestStartedAt = new Date().toISOString();
+
 async function main() {
+  ingestStartedAt = new Date().toISOString();
   const { baseDir, campaignId, prune, dryRun } = parseArgs(process.argv);
   const opts: IngestOpts = {
     baseDir,
@@ -488,6 +541,7 @@ async function main() {
   }
 
   printSummary(stats, opts);
+  await writeRunLog(stats, opts);
   process.exit(0);
 }
 

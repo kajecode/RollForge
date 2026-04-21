@@ -221,17 +221,14 @@ const cmds = [
     .addSubcommand((sc) =>
       sc
         .setName("log")
-        .setDescription("Add a note to a session")
+        .setDescription("Add a note to a session (opens a modal if title+note omitted)")
         .addStringOption((o) =>
           o
             .setName("title")
             .setDescription("Session title, e.g., Session 12")
-            .setRequired(true)
             .setAutocomplete(true),
         )
-        .addStringOption((o) =>
-          o.setName("note").setDescription("The note to add").setRequired(true),
-        )
+        .addStringOption((o) => o.setName("note").setDescription("The note to add"))
         .addStringOption((o) =>
           o.setName("campaign").setDescription("Campaign ID (default: default)"),
         ),

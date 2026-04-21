@@ -12,6 +12,10 @@ const DocumentSchema = new Schema(
     campaignId: { type: String, default: "default" },
     visibility: { type: String, enum: ["gm", "players", "public"], default: "gm" },
     source: { type: String },
+    // Optional canonical URL for the document — used by /rule to render
+    // clickable citations (#87). Populated from frontmatter `sourceUrl`
+    // during ingest.
+    sourceUrl: { type: String },
     contentHash: { type: String },
     updatedAt: { type: Date, default: () => new Date() },
   },

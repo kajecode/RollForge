@@ -67,6 +67,7 @@ function makeInteraction(sub: string, opts: Record<string, any> = {}) {
     deferReply: vi.fn(async () => undefined),
     editReply: vi.fn(async () => undefined),
     followUp: vi.fn(async () => undefined),
+    showModal: vi.fn(async () => undefined),
   } as any;
 }
 
@@ -138,6 +139,44 @@ describe("/session forget (#19)", () => {
     expect(documentDeleteOne).not.toHaveBeenCalled();
     const reply = String(interaction.editReply.mock.calls[0][0]);
     expect(reply).toMatch(/No session or ingested doc found/);
+  });
+});
+
+describe("/session log (#86 — modal fallback)", () => {
+  it("shows a modal when title and note are both omitted", async () => {
+    const interaction = makeInteraction("log");
+    await sessionCmd(interaction);
+
+    expect(interaction.showModal).toHaveBeenCalledTimes(1);
+    expect(interaction.deferReply).not.toHaveBeenCalled();
+    const modalArg = interaction.showModal.mock.calls[0][0];
+    const data = modalArg.data ?? modalArg;
+    expect(String(data.custom_id ?? data.customId)).toMatch(/^session_log_modal:/);
+  });
+
+  it("shows a modal when only title is provided (partial input is not enough)", async () => {
+    const interaction = makeInteraction("log", { title: "Session 12" });
+    await sessionCmd(interaction);
+
+    expect(interaction.showModal).toHaveBeenCalledTimes(1);
+    expect(sessionFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it("fast-paths straight to DB when both title and note are provided (back-compat)", async () => {
+    sessionFindOneAndUpdate.mockResolvedValue({});
+    const interaction = makeInteraction("log", {
+      title: "Session 12",
+      note: "Party killed dragon",
+    });
+    await sessionCmd(interaction);
+
+    expect(interaction.showModal).not.toHaveBeenCalled();
+    expect(interaction.deferReply).toHaveBeenCalled();
+    expect(sessionFindOneAndUpdate).toHaveBeenCalledWith(
+      { guildId: "g1", campaignId: "default", title: "Session 12" },
+      expect.objectContaining({ $push: { notes: "Party killed dragon" } }),
+      expect.objectContaining({ upsert: true }),
+    );
   });
 });
 
