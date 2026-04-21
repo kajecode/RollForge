@@ -5,6 +5,15 @@ All notable changes to RollForge are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/). Version
 numbers follow [Semantic Versioning](https://semver.org/).
 
+## [2.2.2] - 2026-04-21
+
+### Security
+
+- **fix(deps):** Pin `js-yaml` to `3.14.2` via `pnpm.overrides` —
+  resolves GHSA-mh29-5h37-fv8m (moderate prototype-pollution) reached
+  through `gray-matter > js-yaml@3.14.1`. This closes Dependabot alert
+  #2 which had been flagging on every push throughout Round 3 (#97)
+
 ## [2.2.1] - 2026-04-21
 
 Final Round-3 milestone ship (M6 Polish). Six grab-bag items. With this
