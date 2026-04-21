@@ -5,6 +5,61 @@ All notable changes to RollForge are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/). Version
 numbers follow [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-04-21
+
+Fifth Round-3 milestone ship (M5 UX Enhancements). Five issues, shipped
+as two PRs. Minor bump — new user-facing features + a log-format change
+for operators.
+
+### Added
+
+- **Regenerate + Save buttons on `/shop`.** Ephemeral reply now carries
+  a `🔄 Regenerate` button (always) and a `💾 Save` button (when
+  `name` was provided). Regenerate re-rolls inventory via
+  `generateStock` and edits the embed in place. Save persists the
+  currently-displayed stock to the `Shop` collection + corpus
+  markdown. Buttons are owner-only (other users get an ephemeral
+  "Only the user who ran /shop…" reply) and expire 10 minutes after
+  the original reply (#78)
+- **Regenerate + Save buttons on `/npc`.** Regenerate re-runs the LLM
+  with the original tags and mutates the stored payload so a
+  follow-up Save persists the freshly regenerated content. Save
+  refuses when no `name` was provided (#79)
+- **Regenerate button on `/scene`.** No Save — there is no Scene
+  model, and adding one was out of scope for M5. Can be added later
+  without breaking the token format (#79)
+- **Freeform feedback modal on `/rule` 👎.** Clicking the downvote
+  now opens a modal with an optional 1000-char "what was wrong?"
+  paragraph textarea. Submit persists the feedback with the comment;
+  the 👍 path is unchanged (#80)
+- **`/guildconfig view` renders as a Discord embed** with named fields
+  (Economy, GM Role, Default Region, Player Channels, Allowed
+  Regions, Rarity Overrides). `rarityOverrides` now renders its
+  entries correctly on both hydrated and lean paths (previously
+  showed `[object Object]` on `.lean()` fetches) (#81)
+- **`Feedback.comment`** optional field on the Feedback model for
+  storing the 👎 modal textarea (#80)
+
+### Changed
+
+- **Winston file transports emit structured JSON.** `logs/app.log`
+  and `logs/error.log` are now one JSON object per line with the
+  child meta (`command`, `guildId`, `channelId`, `userId`,
+  `subcommand`, `locale`) attached by `loggerForInteraction`
+  serialized into each record. Console transport keeps its
+  human-readable `printf` format for dev. Discord channel transport
+  unaffected. Root logger also sets `defaultMeta: { service:
+  "rollforge" }`. **Operators:** any log-shipping pipeline expecting
+  the old pretty format needs to be updated (#82)
+
+### Infrastructure
+
+- **`src/core/actionStore.ts`** — new generic token-keyed TTL store
+  for pending interaction payloads (shop/npc/scene). Typed by
+  discriminant so handlers can peek without pattern-matching on
+  payload shape. Background pruner (10-min TTL) wired into the
+  `clientReady` handler
+
 ## [2.1.5] - 2026-04-18
 
 Fourth Round-3 milestone ship (M4 Ingest Throughput). Single-issue
