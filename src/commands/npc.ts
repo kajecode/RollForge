@@ -1,8 +1,14 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChatInputCommandInteraction,
+} from "discord.js";
 import { complete } from "@/core/llm";
 import { SYSTEM_NARRATIVE, npcTemplate } from "./_helpers/prompts";
 import Npc from "@/db/models/Npcs";
 import Shop from "@/db/models/Shop";
+import { putAction } from "@/core/actionStore";
 
 const REL_LABELS: Record<string, string> = {
   ally: "Ally",
@@ -13,6 +19,59 @@ const REL_LABELS: Record<string, string> = {
   contact: "Contact",
   enemy: "Enemy",
 };
+
+// Everything needed to re-run /npc in generate mode + (optionally) save
+// the current content. Updated by the regenerate handler so that Save
+// always persists whatever's currently on screen.
+export type NpcActionPayload = {
+  tags: string;
+  region: string | null;
+  shop: string | null;
+  name: string | null;
+  content: string;
+};
+
+export function npcActionRow(token: string, canSave: boolean): ActionRowBuilder<ButtonBuilder> {
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`npc_act:regen:${token}`)
+      .setLabel("🔄 Regenerate")
+      .setStyle(ButtonStyle.Secondary),
+  );
+  if (canSave) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`npc_act:save:${token}`)
+        .setLabel("💾 Save")
+        .setStyle(ButtonStyle.Primary),
+    );
+  }
+  return row;
+}
+
+// Persist the generated content under the given name. Returns the newly
+// saved NPC's content so the caller can rebuild the reply. (#79)
+export async function saveNpc(guildId: string, payload: NpcActionPayload): Promise<void> {
+  if (!payload.name) throw new Error("saveNpc called without a name");
+  await Npc.findOneAndUpdate(
+    { guildId, name: payload.name },
+    {
+      $set: {
+        tags: payload.tags,
+        region: payload.region ?? "",
+        shopName: payload.shop ?? "",
+        content: payload.content,
+      },
+    },
+    { upsert: true, returnDocument: "after" },
+  );
+  if (payload.shop) {
+    await Shop.findOneAndUpdate(
+      { guildId, name: payload.shop, ...(payload.region ? { region: payload.region } : {}) },
+      { $set: { proprietor: payload.name } },
+    );
+  }
+}
 
 export default async function cmd(interaction: ChatInputCommandInteraction) {
   const tags = interaction.options.getString("tags") || "";
@@ -101,7 +160,14 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
     await interaction.editReply("The AI service is currently unavailable. Please try again later.");
     return;
   }
-  await interaction.editReply(out);
+
+  const payload: NpcActionPayload = { tags, region, shop, name, content: out };
+
+  // Persist server-side params + content for the regen/save buttons (#79).
+  // We write the payload even when the original invocation had `save:true`
+  // — that lets the user iterate ("not quite right — regenerate and then
+  // save again") without retyping options.
+  const token = putAction<"npc", NpcActionPayload>("npc", interaction.user.id, payload);
 
   if (save) {
     if (!name) {
@@ -109,18 +175,13 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
         content: "Provide a **name** to save this NPC.",
         ephemeral: true,
       });
-      return;
-    }
-    await Npc.findOneAndUpdate(
-      { guildId: interaction.guildId!, name },
-      { $set: { tags, region: region ?? "", shopName: shop ?? "", content: out } },
-      { upsert: true, returnDocument: "after" },
-    );
-    if (shop) {
-      await Shop.findOneAndUpdate(
-        { guildId: interaction.guildId!, name: shop, ...(region ? { region } : {}) },
-        { $set: { proprietor: name } },
-      );
+    } else {
+      await saveNpc(interaction.guildId!, payload);
     }
   }
+
+  await interaction.editReply({
+    content: out,
+    components: [npcActionRow(token, name !== null)],
+  });
 }

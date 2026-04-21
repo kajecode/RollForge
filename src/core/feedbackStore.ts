@@ -26,3 +26,17 @@ export function popPendingFeedback(token: string): PendingFeedback | null {
   store.delete(token); // single-use
   return entry;
 }
+
+// Look up a pending feedback entry WITHOUT deleting it. Used by the 👎
+// flow (#80) where the button click opens a modal — the actual DB write
+// happens on modal submit, at which point we pop. Expired entries are
+// evicted on access as a side effect, same as pop.
+export function peekPendingFeedback(token: string): PendingFeedback | null {
+  const entry = store.get(token);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    store.delete(token);
+    return null;
+  }
+  return entry;
+}

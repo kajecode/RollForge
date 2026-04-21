@@ -1,5 +1,11 @@
-import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { getGuildConfig } from "@/services/guild";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+} from "discord.js";
+import { getGuildConfig, type GuildConfigLean } from "@/services/guild";
 import { SHOP_FILTERS, ShopType } from "./_helpers/shopPolicy";
 import { MarketLevel } from "./_helpers/weights";
 import { generateStock, type SettlementSize } from "./_helpers/stockGenerator";
@@ -11,6 +17,7 @@ import Regions from "@/db/models/Regions";
 import { loggerForInteraction } from "@/services/logger";
 import { formatPriceGP } from "@/util/coin-exchange";
 import { fieldChunks } from "@/util/paginate";
+import { putAction } from "@/core/actionStore";
 
 function parseSpecial(s?: string) {
   if (!s) return null;
@@ -28,6 +35,171 @@ function renderItemLine(
   isBlackmarketOnly: boolean,
 ): string {
   return `• ${name}${isMagic ? " ✨" : ""}${isBlackmarketOnly ? " 🕵" : ""} — **${price != null ? formatPriceGP(price, { compact: true, showFree: true }) : "—"}** (${rarity})`;
+}
+
+// Everything the shop regen/save buttons need to re-run generateStock and
+// optionally persist the current inventory. The `chosen` + `gpCap` fields
+// carry the currently-rendered stock; the regen handler updates them so a
+// subsequent Save matches the on-screen inventory. (#78)
+export type ShopActionPayload = {
+  type: ShopType;
+  region: string | null;
+  district: string;
+  blackmarket: boolean;
+  marketLevel: MarketLevel;
+  settlementSize: SettlementSize;
+  desiredCount: number;
+  // Save metadata. Non-null shopName + town are required for Save to work.
+  shopName: string | null;
+  town: string;
+  locationInTown: string;
+  proprietor: string;
+  specialties: string[];
+  notes: string;
+  specialItems: NonNullable<ReturnType<typeof parseSpecial>>[];
+  // Current inventory on display.
+  chosen: Awaited<ReturnType<typeof generateStock>>["picks"];
+  gpCap: number;
+};
+
+export function shopActionRow(token: string, canSave: boolean): ActionRowBuilder<ButtonBuilder> {
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`shop_act:regen:${token}`)
+      .setLabel("🔄 Regenerate")
+      .setStyle(ButtonStyle.Secondary),
+  );
+  if (canSave) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`shop_act:save:${token}`)
+        .setLabel("💾 Save")
+        .setStyle(ButtonStyle.Primary),
+    );
+  }
+  return row;
+}
+
+// Pure-ish renderer: same embed both the initial command and the regen
+// button produce. Footer gets an optional "Saved: <path>" suffix.
+export function buildShopEmbed(
+  payload: ShopActionPayload,
+  guildCfg: GuildConfigLean | null,
+  savedAt?: string,
+): EmbedBuilder {
+  const footerBase =
+    guildCfg?.economyMultiplier && guildCfg.economyMultiplier !== 1
+      ? `Economy x${guildCfg.economyMultiplier}`
+      : "SRD/House pricing";
+  const footer = savedAt ? `${footerBase} • Saved: ${savedAt}` : footerBase;
+
+  return new EmbedBuilder()
+    .setTitle(payload.shopName ?? `${payload.type[0].toUpperCase()}${payload.type.slice(1)} Shop`)
+    .setDescription(
+      [
+        payload.region ? `Region: **${payload.region}**` : null,
+        `District: **${payload.district}**`,
+        `Size: **${payload.settlementSize}** (per-item cap **${payload.gpCap} gp**)`,
+        payload.blackmarket ? "Blackmarket: **Yes**" : null,
+      ]
+        .filter(Boolean)
+        .join(" | "),
+    )
+    .addFields(
+      payload.chosen.length
+        ? fieldChunks(
+            payload.chosen.map((p) =>
+              renderItemLine(
+                p.it.name,
+                p.price,
+                p.it.rarity,
+                !!p.it.isMagic,
+                !!p.it.blackmarketOnly,
+              ),
+            ),
+          ).map((v, i) => ({ name: i === 0 ? "Stock" : "Stock (cont.)", value: v }))
+        : [{ name: "Stock", value: "_(none)_" }],
+    )
+    .setFooter({ text: footer });
+}
+
+// Re-rolls the shop inventory with the current payload params. Mutates
+// chosen + gpCap on the passed payload so callers can immediately use it
+// to re-render or persist. Throws on unknown region (same semantics as
+// the initial command flow).
+export async function regenerateShopStock(
+  payload: ShopActionPayload,
+  guildCfg: GuildConfigLean | null,
+): Promise<void> {
+  const result = await generateStock({
+    type: payload.type,
+    marketLevel: payload.marketLevel,
+    region: payload.region,
+    blackmarket: payload.blackmarket,
+    settlementSize: payload.settlementSize,
+    desiredCount: payload.desiredCount,
+    guildCfg,
+  });
+  payload.chosen = result.picks;
+  payload.gpCap = result.gpCap;
+}
+
+// Persist the currently-displayed inventory to Shop + corpus markdown.
+// Returns the relative path under cwd for the written file so the caller
+// can surface it in the footer.
+export async function saveShop(guildId: string, payload: ShopActionPayload): Promise<string> {
+  if (!payload.shopName) throw new Error("saveShop called without shopName");
+
+  const inv = payload.chosen.map((p) => ({
+    name: p.it.name,
+    priceGP: p.price!,
+    rarity: p.it.rarity,
+    category: p.it.category,
+    isMagic: !!p.it.isMagic,
+  }));
+
+  const md = renderShopMarkdown({
+    region: payload.region ?? "",
+    town: payload.town,
+    name: payload.shopName,
+    type: payload.type,
+    locationInTown: payload.locationInTown,
+    proprietor: payload.proprietor,
+    specialties: payload.specialties,
+    inventory: inv,
+    specialItems: payload.specialItems,
+    notes: payload.notes,
+  });
+
+  // Scope shop markdown under the guild's own corpus subtree (#18).
+  const relDir = path.join("corpus", "guilds", guildId, "regions", payload.region ?? "Unknown");
+  const base = path.resolve(process.cwd(), relDir);
+  await fs.mkdir(base, { recursive: true });
+  const fileName = `${payload.town ? `${payload.town} - ` : ""}${payload.shopName}.md`;
+  const filePath = path.join(base, fileName);
+  await fs.writeFile(filePath, md, "utf8");
+
+  await Shop.findOneAndUpdate(
+    { guildId, region: payload.region ?? "", town: payload.town, name: payload.shopName },
+    {
+      $set: {
+        type: payload.type,
+        district: payload.district,
+        blackmarket: payload.blackmarket,
+        locationInTown: payload.locationInTown,
+        proprietor: payload.proprietor,
+        specialties: payload.specialties,
+        inventory: inv,
+        specialItems: [],
+        notes: payload.notes,
+        markdownPath: path.relative(process.cwd(), filePath),
+        markdown: md,
+      },
+    },
+    { upsert: true, returnDocument: "after" },
+  );
+
+  return path.posix.join(relDir.replace(/\\/g, "/"), fileName);
 }
 
 export default async function cmd(interaction: ChatInputCommandInteraction) {
@@ -124,23 +296,39 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
     }
   }
 
+  // Build the action payload up front so both the initial generate and the
+  // Save branch below use the same code path.
+  const specialItems = [
+    parseSpecial(interaction.options.getString("special1") || undefined),
+    parseSpecial(interaction.options.getString("special2") || undefined),
+  ].filter((s): s is NonNullable<typeof s> => s !== null);
+
+  const payload: ShopActionPayload = {
+    type,
+    region,
+    district,
+    blackmarket: isBlackmarket,
+    marketLevel,
+    settlementSize,
+    desiredCount: limit,
+    shopName,
+    town,
+    locationInTown: interaction.options.getString("location") || "",
+    proprietor: interaction.options.getString("proprietor") || "",
+    specialties: (interaction.options.getString("specialties") || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+    notes: interaction.options.getString("notes") || "",
+    specialItems,
+    chosen: [],
+    gpCap: 0,
+  };
+
   // Generate fresh stock. generateStock throws on an unknown region slug
-  // (see issue #5) — catch it so the GM sees a friendly message instead of
-  // the generic "something went wrong" fallback from the top-level handler.
-  let chosen: Awaited<ReturnType<typeof generateStock>>["picks"];
-  let gpCap: number;
+  // (#5) — catch it so the GM sees a friendly message.
   try {
-    const result = await generateStock({
-      type,
-      marketLevel,
-      region,
-      blackmarket: isBlackmarket,
-      settlementSize,
-      desiredCount: limit,
-      guildCfg,
-    });
-    chosen = result.picks;
-    gpCap = result.gpCap;
+    await regenerateShopStock(payload, guildCfg);
   } catch (err: any) {
     if (/^Unknown region:/.test(err?.message ?? "")) {
       await interaction.editReply(
@@ -151,114 +339,19 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
     throw err;
   }
 
-  const footerBase =
-    guildCfg?.economyMultiplier && guildCfg.economyMultiplier !== 1
-      ? `Economy x${guildCfg.economyMultiplier}`
-      : "SRD/House pricing";
-
-  const embed = new EmbedBuilder()
-    .setTitle(shopName ?? `${type[0].toUpperCase()}${type.slice(1)} Shop`)
-    .setDescription(
-      [
-        region ? `Region: **${region}**` : null,
-        `District: **${district}**`,
-        `Size: **${settlementSize}** (per-item cap **${gpCap} gp**)`,
-        isBlackmarket ? "Blackmarket: **Yes**" : null,
-      ]
-        .filter(Boolean)
-        .join(" | "),
-    )
-    .addFields(
-      chosen.length
-        ? fieldChunks(
-            chosen.map((p) =>
-              renderItemLine(
-                p.it.name,
-                p.price,
-                p.it.rarity,
-                !!p.it.isMagic,
-                !!p.it.blackmarketOnly,
-              ),
-            ),
-          ).map((v, i) => ({ name: i === 0 ? "Stock" : "Stock (cont.)", value: v }))
-        : [{ name: "Stock", value: "_(none)_" }],
-    )
-    .setFooter({ text: footerBase });
-
+  let savedAt: string | undefined;
   if (save) {
     if (!shopName) {
       await interaction.editReply("To save, provide a **name** (shop title).");
       return;
     }
-    const locationInTown = interaction.options.getString("location") || "";
-    const proprietor = interaction.options.getString("proprietor") || "";
-    const specialties = (interaction.options.getString("specialties") || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const notes = interaction.options.getString("notes") || "";
-    const specialItems = [
-      parseSpecial(interaction.options.getString("special1") || undefined),
-      parseSpecial(interaction.options.getString("special2") || undefined),
-    ].filter(Boolean) as any[];
-
-    const inv = chosen.map((p) => ({
-      name: p.it.name,
-      priceGP: p.price!,
-      rarity: p.it.rarity,
-      category: p.it.category,
-      isMagic: !!p.it.isMagic,
-    }));
-
-    const md = renderShopMarkdown({
-      region: region ?? "",
-      town,
-      name: shopName,
-      type,
-      locationInTown,
-      proprietor,
-      specialties,
-      inventory: inv,
-      specialItems,
-      notes,
-    });
-
-    // Scope shop markdown under the guild's own corpus subtree. Prior to
-    // issue #18, files went to `corpus/regions/<region>/<town - name>.md`
-    // with no guildId — two guilds with a "Stonemarket" in "Greywater"
-    // would silently overwrite each other on every ingest run.
-    const guildId = interaction.guildId!;
-    const relDir = path.join("corpus", "guilds", guildId, "regions", region ?? "Unknown");
-    const base = path.resolve(process.cwd(), relDir);
-    await fs.mkdir(base, { recursive: true });
-    const fileName = `${town ? `${town} - ` : ""}${shopName}.md`;
-    const filePath = path.join(base, fileName);
-    await fs.writeFile(filePath, md, "utf8");
-
-    await Shop.findOneAndUpdate(
-      { guildId, region: region ?? "", town, name: shopName },
-      {
-        $set: {
-          type,
-          district,
-          blackmarket: isBlackmarket,
-          locationInTown,
-          proprietor,
-          specialties,
-          inventory: inv,
-          specialItems: [],
-          notes,
-          markdownPath: path.relative(process.cwd(), filePath),
-          markdown: md,
-        },
-      },
-      { upsert: true, returnDocument: "after" },
-    );
-
-    embed.setFooter({
-      text: `${footerBase} • Saved: ${path.posix.join(relDir.replace(/\\/g, "/"), fileName)}`,
-    });
+    savedAt = await saveShop(interaction.guildId!, payload);
   }
 
-  await interaction.editReply({ embeds: [embed] });
+  const embed = buildShopEmbed(payload, guildCfg, savedAt);
+  const token = putAction<"shop", ShopActionPayload>("shop", interaction.user.id, payload);
+  await interaction.editReply({
+    embeds: [embed],
+    components: [shopActionRow(token, shopName !== null)],
+  });
 }

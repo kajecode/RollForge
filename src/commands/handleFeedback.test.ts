@@ -12,8 +12,10 @@ vi.mock("@/db/models/Feedback.js", () => ({
 }));
 
 const popPendingFeedbackMock = vi.fn((..._args: any[]) => undefined as any);
+const peekPendingFeedbackMock = vi.fn((..._args: any[]) => undefined as any);
 vi.mock("@/core/feedbackStore.js", () => ({
   popPendingFeedback: (...args: any[]) => popPendingFeedbackMock(...args),
+  peekPendingFeedback: (...args: any[]) => peekPendingFeedbackMock(...args),
 }));
 
 import { handleFeedback } from "./handleFeedback.js";
@@ -24,6 +26,7 @@ type ButtonInteractionLike = {
   deferUpdate: ReturnType<typeof vi.fn>;
   editReply: ReturnType<typeof vi.fn>;
   reply: ReturnType<typeof vi.fn>;
+  showModal: ReturnType<typeof vi.fn>;
 };
 
 function makeInteraction(customId: string): ButtonInteractionLike {
@@ -39,6 +42,9 @@ function makeInteraction(customId: string): ButtonInteractionLike {
     reply: vi.fn(async () => {
       callOrder.push("reply");
     }),
+    showModal: vi.fn(async () => {
+      callOrder.push("showModal");
+    }),
   };
 }
 
@@ -47,7 +53,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("handleFeedback", () => {
+describe("handleFeedback — 👍 path", () => {
   it("replies with the expired message when the pending token is gone", async () => {
     popPendingFeedbackMock.mockReturnValue(undefined);
     const interaction = makeInteraction("rule_fb:up:expired");
@@ -80,20 +86,19 @@ describe("handleFeedback", () => {
     expect(ackIdx).toBeLessThan(dbIdx);
   });
 
-  it("disables both buttons on editReply after the write succeeds", async () => {
+  it("disables both buttons on editReply after the 👍 write succeeds", async () => {
     popPendingFeedbackMock.mockReturnValue({
       guildId: "g1",
       query: "q",
       chunkIds: [],
     });
-    const interaction = makeInteraction("rule_fb:down:tok");
+    const interaction = makeInteraction("rule_fb:up:tok");
 
     await handleFeedback(interaction as any);
 
     expect(interaction.editReply).toHaveBeenCalledTimes(1);
     const arg = interaction.editReply.mock.calls[0][0];
     const row = arg.components[0];
-    // ActionRowBuilder exposes components via its internal data
     const buttons = row.components ?? row.data?.components ?? [];
     expect(buttons.length).toBe(2);
     for (const b of buttons) {
@@ -102,13 +107,13 @@ describe("handleFeedback", () => {
     }
   });
 
-  it("persists the sentiment extracted from the customId", async () => {
+  it("persists the 👍 sentiment from the customId", async () => {
     popPendingFeedbackMock.mockReturnValue({
       guildId: "g1",
       query: "q",
       chunkIds: ["c1", "c2"],
     });
-    const interaction = makeInteraction("rule_fb:down:tok");
+    const interaction = makeInteraction("rule_fb:up:tok");
 
     await handleFeedback(interaction as any);
 
@@ -117,7 +122,40 @@ describe("handleFeedback", () => {
       userId: "user-1",
       query: "q",
       chunkIds: ["c1", "c2"],
-      sentiment: "down",
+      sentiment: "up",
     });
+  });
+});
+
+describe("handleFeedback — 👎 path (#80)", () => {
+  it("shows a modal instead of writing to the DB on 👎", async () => {
+    peekPendingFeedbackMock.mockReturnValue({
+      guildId: "g1",
+      query: "q",
+      chunkIds: ["c1"],
+    });
+    const interaction = makeInteraction("rule_fb:down:tok");
+
+    await handleFeedback(interaction as any);
+
+    expect(interaction.showModal).toHaveBeenCalledTimes(1);
+    expect(feedbackCreate).not.toHaveBeenCalled();
+    expect(popPendingFeedbackMock).not.toHaveBeenCalled();
+    const modalArg = interaction.showModal.mock.calls[0][0];
+    const data = modalArg.data ?? modalArg;
+    expect(String(data.custom_id ?? data.customId)).toBe("rule_fb_modal:tok");
+  });
+
+  it("replies expired when the peek finds no pending entry", async () => {
+    peekPendingFeedbackMock.mockReturnValue(null);
+    const interaction = makeInteraction("rule_fb:down:old");
+
+    await handleFeedback(interaction as any);
+
+    expect(interaction.reply).toHaveBeenCalledWith({
+      ephemeral: true,
+      content: "This feedback link has expired.",
+    });
+    expect(interaction.showModal).not.toHaveBeenCalled();
   });
 });

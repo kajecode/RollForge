@@ -1,6 +1,10 @@
 import { Client, GatewayIntentBits, Interaction } from "discord.js";
 import { handleAutocomplete } from "@/commands/autocomplete";
 import { handleFeedback } from "@/commands/handleFeedback";
+import { handleFeedbackModal } from "@/commands/handleFeedbackModal";
+import { handleShopAction } from "@/commands/handleShopAction";
+import { handleNpcAction } from "@/commands/handleNpcAction";
+import { handleSceneAction } from "@/commands/handleSceneAction";
 import { env, connectMongo } from "@/config";
 
 import rule from "@/commands/rule";
@@ -15,6 +19,7 @@ import session from "@/commands/session";
 import { EPHEMERAL_FLAGS, EPHEMERAL_REPLY } from "@/util";
 import logger, { initLogger } from "@/services/logger";
 import { startHistoryPruner } from "@/core/conversationHistory";
+import { startActionStorePruner } from "@/core/actionStore";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -26,6 +31,9 @@ client.once("clientReady", async () => {
   // Periodically evict expired conversation-history entries and enforce
   // the global cap, independent of request traffic. See issue #12.
   startHistoryPruner();
+  // Evict expired regen/save button payloads (#78, #79). Cheap background
+  // timer; tokens have a 10-minute TTL.
+  startActionStorePruner();
 });
 
 client.on("interactionCreate", async (interaction: Interaction) => {
@@ -38,9 +46,23 @@ client.on("interactionCreate", async (interaction: Interaction) => {
     return;
   }
   if (interaction.isButton()) {
-    if (interaction.customId.startsWith("rule_fb:")) {
-      await handleFeedback(interaction).catch((err: any) => {
-        logger.error(`feedback handler failed: ${err?.message}`, err);
+    const id = interaction.customId;
+    const run = (label: string, fn: () => Promise<void>) =>
+      fn().catch((err: any) => {
+        logger.error(`${label} handler failed: ${err?.message}`, err);
+      });
+    if (id.startsWith("rule_fb:")) await run("feedback", () => handleFeedback(interaction));
+    else if (id.startsWith("shop_act:"))
+      await run("shop-action", () => handleShopAction(interaction));
+    else if (id.startsWith("npc_act:")) await run("npc-action", () => handleNpcAction(interaction));
+    else if (id.startsWith("scene_act:"))
+      await run("scene-action", () => handleSceneAction(interaction));
+    return;
+  }
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId.startsWith("rule_fb_modal:")) {
+      await handleFeedbackModal(interaction).catch((err: any) => {
+        logger.error(`feedback-modal handler failed: ${err?.message}`, err);
       });
     }
     return;
