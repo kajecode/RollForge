@@ -14,6 +14,7 @@ import sceneCmd from "./scene.js";
 
 function makeInteraction(prompt = "") {
   return {
+    user: { id: "user-1" },
     options: {
       getString: vi.fn((name: string) => (name === "prompt" ? prompt : null)),
     },
@@ -25,13 +26,19 @@ function makeInteraction(prompt = "") {
 beforeEach(() => vi.clearAllMocks());
 
 describe("/scene", () => {
-  it("generates a scene and replies", async () => {
+  it("generates a scene and replies with a regenerate button", async () => {
     const interaction = makeInteraction("a haunted inn");
     await sceneCmd(interaction);
 
     expect(interaction.deferReply).toHaveBeenCalled();
     expect(completeMock).toHaveBeenCalledWith("sys", "describe a haunted inn");
-    expect(interaction.editReply).toHaveBeenCalledWith("A dark forest clearing...");
+    const reply = interaction.editReply.mock.calls[0][0];
+    expect(reply.content).toBe("A dark forest clearing...");
+    const row = reply.components[0];
+    const buttons = row.components ?? row.data?.components ?? [];
+    expect(buttons.length).toBe(1);
+    const data = buttons[0].data ?? buttons[0];
+    expect(String(data.custom_id ?? data.customId)).toMatch(/^scene_act:regen:/);
   });
 
   it("works with an empty prompt", async () => {

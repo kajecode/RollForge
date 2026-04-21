@@ -7,6 +7,10 @@ const FeedbackSchema = new Schema(
     query: { type: String, required: true },
     chunkIds: [{ type: Schema.Types.ObjectId }],
     sentiment: { type: String, enum: ["up", "down"], required: true },
+    // Freeform "what was wrong?" comment captured from the /rule 👎 modal
+    // (#80). Optional — legacy 👎 votes recorded before the modal shipped
+    // will not have this field.
+    comment: { type: String },
   },
   { timestamps: true },
 );

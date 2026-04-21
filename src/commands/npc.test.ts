@@ -40,6 +40,7 @@ function makeInteraction(opts: Record<string, any> = {}) {
   const optionMap = new Map(Object.entries(opts));
   return {
     guildId: "g1",
+    user: { id: "user-1" },
     options: {
       getString: vi.fn((name: string) => (optionMap.get(name) as string) ?? null),
       getBoolean: vi.fn((name: string) => (optionMap.get(name) as boolean) ?? null),
