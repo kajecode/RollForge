@@ -5,6 +5,55 @@ All notable changes to RollForge are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/). Version
 numbers follow [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] - 2026-04-21
+
+Final Round-3 milestone ship (M6 Polish). Six grab-bag items. With this
+release all 24 Round-3 findings are closed.
+
+### ⚠️ Migration required (Shop unique index)
+
+Existing deployments must drop the old Shop unique index after pulling
+this release and before restarting the bot:
+
+```
+db.shops.dropIndex("guildId_1_region_1_town_1_name_1")
+```
+
+Mongoose will rebuild the index with the new case-insensitive collation
+on next connect.
+
+### Added
+
+- **Clickable `/rule` citations** — Documents now have an optional
+  `sourceUrl` field, populated from `sourceUrl` or `url` in corpus
+  frontmatter during ingest. `/rule` appends a **Sources** footer with
+  Discord markdown links (`[Doc Title](<url>)`) when hits carry URLs.
+  In-answer `[Doc Title]` mentions from the LLM are left untouched so
+  numbering stays familiar (#87)
+- **Ingest JSONL run log** — `pnpm ingest` writes one structured JSON
+  line per run to `logs/ingest-YYYY-MM-DD.jsonl` with tokens, USD
+  estimate, doc counts, failed paths, and the embed model. Dry-runs
+  skip the write. Path configurable via `INGEST_LOG_DIR` env var
+  (default `./logs`) (#88)
+- **`/session log` modal fallback** — invoking `/session log` without
+  both `title` and `note` opens a modal with a title field and
+  2000-char paragraph note. Slash-option fast path preserved for
+  back-compat (#86)
+
+### Changed
+
+- **Shop unique index** uses case-insensitive collation so
+  `"Stonemarket"` and `"stonemarket"` in the same guild/region/town
+  correctly collide on the unique constraint (#84). See migration note
+  above
+- **Prompt templates** hoist their static prefixes into module-level
+  `const` strings so OpenAI's prefix cache reliably hits across
+  invocations. Dynamic values (tags/seed/type/item) remain strictly
+  suffixed (#85)
+- **Npcs indexes** — block comment explains why the schema keeps both
+  the unique and ci collation indexes on `(guildId, name)`; they serve
+  different purposes and cannot be merged (#83)
+
 ## [2.2.0] - 2026-04-21
 
 Fifth Round-3 milestone ship (M5 UX Enhancements). Five issues, shipped
