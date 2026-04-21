@@ -7,8 +7,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("@/core/embedding.js", () => ({
   embed: vi.fn(async () => [[0.1]]),
 }));
+const hybridSearchMock = vi.fn(async (..._args: any[]) => [] as any[]);
 vi.mock("@/core/rag.js", () => ({
-  hybridSearch: vi.fn(async () => []),
+  hybridSearch: (...args: any[]) => hybridSearchMock(...args),
 }));
 vi.mock("@/core/llm.js", () => ({
   complete: vi.fn(async () => "answer"),
@@ -113,5 +114,58 @@ describe("/rule input validation", () => {
     expect(embed).toHaveBeenCalledTimes(1);
     expect(complete).toHaveBeenCalledTimes(1);
     expect(interaction.editReply).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("/rule clickable citations (#87)", () => {
+  it("appends a Sources footer with markdown links when hits carry sourceUrl", async () => {
+    hybridSearchMock.mockResolvedValueOnce([
+      {
+        _id: "c1",
+        text: "body",
+        title: "Grappling",
+        sourceUrl: "https://example.com/grappling",
+        score: 1,
+        documentId: "d1",
+        visibility: "public",
+      },
+      {
+        _id: "c2",
+        text: "body",
+        title: "Shoving",
+        score: 0.5,
+        documentId: "d2",
+        visibility: "public",
+      },
+    ]);
+    const interaction = makeInteraction("how do I grapple?");
+
+    await ruleCmd(interaction);
+
+    const reply = interaction.editReply.mock.calls[0][0];
+    const content = String(reply.content);
+    expect(content).toContain("**Sources**");
+    expect(content).toContain("[Grappling](<https://example.com/grappling>)");
+    // hit without sourceUrl must not appear in the footer
+    expect(content).not.toContain("Shoving](<");
+  });
+
+  it("omits the Sources footer when no hits have URLs", async () => {
+    hybridSearchMock.mockResolvedValueOnce([
+      {
+        _id: "c1",
+        text: "body",
+        title: "No URL",
+        score: 1,
+        documentId: "d1",
+        visibility: "public",
+      },
+    ]);
+    const interaction = makeInteraction("how do I grapple?");
+
+    await ruleCmd(interaction);
+
+    const reply = interaction.editReply.mock.calls[0][0];
+    expect(String(reply.content)).not.toContain("**Sources**");
   });
 });

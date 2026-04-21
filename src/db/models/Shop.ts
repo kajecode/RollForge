@@ -52,7 +52,26 @@ const ShopSchema = new Schema(
   { timestamps: true },
 );
 
-ShopSchema.index({ guildId: 1, region: 1, town: 1, name: 1 }, { unique: true });
+// Unique index on (guildId, region, town, name) with case-insensitive
+// collation (#84). Without the collation, shops named "Stonemarket" and
+// "stonemarket" in the same guild/region/town could both be saved,
+// contradicting the ci autocomplete's view of the world. The collation
+// makes name comparisons equality-insensitive to case, so case-variant
+// names now correctly collide on the unique constraint.
+//
+// **Migration note:** on databases created before this change, Mongoose
+// auto-index sync will try to create a second index with the same key
+// spec but a different collation and fail. To migrate an existing
+// deployment, drop the old unique index first:
+//
+//   db.shops.dropIndex("guildId_1_region_1_town_1_name_1")
+//
+// …then restart the bot. Mongoose will rebuild the index with the new
+// collation on the next connect.
+ShopSchema.index(
+  { guildId: 1, region: 1, town: 1, name: 1 },
+  { unique: true, collation: { locale: "en", strength: 2 } },
+);
 // Case-insensitive collation indexes supporting autocomplete prefix
 // lookups for shop name and town (#13). Scoped by guildId in the
 // index key to keep per-guild autocomplete queries from scanning

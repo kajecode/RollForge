@@ -101,6 +101,20 @@ export default async function cmd(interaction: ChatInputCommandInteraction) {
   if (answer.length > MAX_ANSWER_CHARS) {
     answer = answer.slice(0, MAX_ANSWER_CHARS) + "\n\n*(truncated)*";
   }
+
+  // Append clickable citations footer when at least one hit has a
+  // sourceUrl (#87). The in-answer `[Doc Title]` mentions the LLM
+  // already produces are left untouched so the numbering stays
+  // familiar; the footer adds the hyperlinks in a dedicated section.
+  const linkable = hits.filter((h): h is typeof h & { sourceUrl: string } => !!h.sourceUrl);
+  if (linkable.length) {
+    const footerLines = linkable.map(
+      (h) => `[${hits.indexOf(h) + 1}] [${h.title ?? "Source"}](<${h.sourceUrl}>)`,
+    );
+    const footer = `\n\n**Sources**\n${footerLines.join("\n")}`;
+    if (answer.length + footer.length <= MAX_ANSWER_CHARS) answer += footer;
+  }
+
   const parts = splitText(answer).slice(0, MAX_REPLY_PARTS);
 
   // Feedback buttons on the first (or only) reply

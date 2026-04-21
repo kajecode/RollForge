@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, Interaction } from "discord.js";
 import { handleAutocomplete } from "@/commands/autocomplete";
 import { handleFeedback } from "@/commands/handleFeedback";
 import { handleFeedbackModal } from "@/commands/handleFeedbackModal";
+import { handleSessionLogModal } from "@/commands/handleSessionLogModal";
 import { handleShopAction } from "@/commands/handleShopAction";
 import { handleNpcAction } from "@/commands/handleNpcAction";
 import { handleSceneAction } from "@/commands/handleSceneAction";
@@ -60,9 +61,14 @@ client.on("interactionCreate", async (interaction: Interaction) => {
     return;
   }
   if (interaction.isModalSubmit()) {
-    if (interaction.customId.startsWith("rule_fb_modal:")) {
+    const id = interaction.customId;
+    if (id.startsWith("rule_fb_modal:")) {
       await handleFeedbackModal(interaction).catch((err: any) => {
         logger.error(`feedback-modal handler failed: ${err?.message}`, err);
+      });
+    } else if (id.startsWith("session_log_modal:")) {
+      await handleSessionLogModal(interaction).catch((err: any) => {
+        logger.error(`session-log-modal handler failed: ${err?.message}`, err);
       });
     }
     return;

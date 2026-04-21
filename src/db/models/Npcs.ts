@@ -26,9 +26,18 @@ const NpcSchema = new Schema(
   { timestamps: true },
 );
 
+// Two near-identical indexes on (guildId, name) by design — not a bug
+// (#83). They cannot be merged:
+//   • The unique index enforces strict-equality duplicate prevention.
+//     Adding a collation would switch it to case-insensitive uniqueness,
+//     which we deliberately do not want — GMs should be able to have
+//     "Gareth" and "gareth" as distinct NPCs if they so choose (e.g. a
+//     character and their sibling named after them).
+//   • The ci collation index powers autocomplete prefix matching so
+//     "gar" finds "Gareth" regardless of case.
+// Index memory cost: ~2x on these fields, bounded and acceptable for
+// the NPC collection size we expect.
 NpcSchema.index({ guildId: 1, name: 1 }, { unique: true });
-// Case-insensitive collation index supporting autocomplete prefix
-// lookup for NPC name (#13).
 NpcSchema.index(
   { guildId: 1, name: 1 },
   { name: "guild_name_ci", collation: { locale: "en", strength: 2 } },

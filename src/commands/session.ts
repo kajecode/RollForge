@@ -1,4 +1,10 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import {
+  ActionRowBuilder,
+  ChatInputCommandInteraction,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+} from "discord.js";
 import { complete } from "@/core/llm";
 import { embed } from "@/core/embedding";
 import Session from "@/db/models/Sessions";
@@ -73,27 +79,78 @@ async function forgetSession(guildId: string, campaignId: string, title: string)
   };
 }
 
+// Persist a session note. Shared by the slash-command fast path and the
+// modal submit (#86).
+export async function appendSessionNote(
+  guildId: string,
+  campaignId: string,
+  title: string,
+  note: string,
+) {
+  await Session.findOneAndUpdate(
+    { guildId, campaignId, title },
+    { $push: { notes: note }, $setOnInsert: { sessionDate: new Date() } },
+    { upsert: true, returnDocument: "after" },
+  );
+}
+
+// Build the `/session log` modal (#86). Title field is short text (will
+// accept the autocompleted session or a brand-new one); note is a
+// paragraph. Modal custom_id carries the campaign id so the submit
+// handler can route without an additional lookup.
+export function buildSessionLogModal(campaignId: string): ModalBuilder {
+  const modal = new ModalBuilder()
+    .setCustomId(`session_log_modal:${campaignId}`)
+    .setTitle("Log a session note");
+  const titleInput = new TextInputBuilder()
+    .setCustomId("title")
+    .setLabel("Session title")
+    .setPlaceholder("e.g., Session 12")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setMaxLength(100);
+  const noteInput = new TextInputBuilder()
+    .setCustomId("note")
+    .setLabel("Note")
+    .setPlaceholder("What happened?")
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setMaxLength(2000);
+  modal.addComponents(
+    new ActionRowBuilder<TextInputBuilder>().addComponents(titleInput),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(noteInput),
+  );
+  return modal;
+}
+
 export default async function cmd(interaction: ChatInputCommandInteraction) {
   const sub = interaction.options.getSubcommand(true);
   const guildId = interaction.guildId!;
   const campaignId = interaction.options.getString("campaign") || "default";
 
-  await interaction.deferReply();
-
   // ── log ──────────────────────────────────────────────────────────────────
+  // Handled BEFORE deferReply so we can showModal() when either option is
+  // missing. deferReply and showModal are mutually exclusive acks.
   if (sub === "log") {
-    const title = interaction.options.getString("title", true);
-    const note = interaction.options.getString("note", true);
+    const title = interaction.options.getString("title", false);
+    const note = interaction.options.getString("note", false);
 
-    await Session.findOneAndUpdate(
-      { guildId, campaignId, title },
-      { $push: { notes: note }, $setOnInsert: { sessionDate: new Date() } },
-      { upsert: true, returnDocument: "after" },
-    );
+    if (!title || !note) {
+      // Open a modal instead of rejecting — lets the GM log a note without
+      // typing slash-option text (#86). Discord modals only support text
+      // inputs (no select menus), so recent-session suggestions stay on
+      // the autocomplete side of the slash-command title option.
+      await interaction.showModal(buildSessionLogModal(campaignId));
+      return;
+    }
 
+    await interaction.deferReply();
+    await appendSessionNote(guildId, campaignId, title, note);
     await interaction.editReply(`Logged to **${title}**: ${note}`);
     return;
   }
+
+  await interaction.deferReply();
 
   // ── recap ─────────────────────────────────────────────────────────────────
   if (sub === "recap") {
