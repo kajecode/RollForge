@@ -1,7 +1,8 @@
-import { ChatInputCommandInteraction, PermissionFlagsBits } from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder, PermissionFlagsBits } from "discord.js";
 import GuildConfig, { GuildConfigDoc } from "@/db/models/GuildConfig";
 import Regions from "@/db/models/Regions";
 import { invalidateGuildConfig } from "@/services/guild";
+import { mapEntries } from "@/util/mapLike";
 
 export default async function guildconfig(interaction: ChatInputCommandInteraction) {
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
@@ -134,35 +135,67 @@ export default async function guildconfig(interaction: ChatInputCommandInteracti
       return interaction.editReply("No configuration found for this server yet.");
     }
 
-    const gmRoleText = doc.gmRoleId ? `<@&${doc.gmRoleId}>` : "(none)";
-    const chText =
-      Array.isArray(doc.playerChannelIds) && doc.playerChannelIds.length
-        ? doc.playerChannelIds.map((id: string) => `<#${id}>`).join(", ")
-        : "(none)";
-    const regionsText =
-      Array.isArray(doc.allowedRegions) && doc.allowedRegions.length
-        ? doc.allowedRegions.join(", ")
-        : "(none)";
-    const defaultRegionText = doc.defaultRegionTag?.startsWith("region:")
-      ? doc.defaultRegionTag.slice("region:".length)
-      : (doc.defaultRegionTag ?? "(unset)");
-    const rarity = doc.rarityOverrides || {};
-    const rarityLines = Object.keys(rarity).length
-      ? Object.entries(rarity)
-          .map(([k, v]: any) => `• ${k}: ${v.min}-${v.max} gp`)
-          .join("\n")
-      : "(none set)";
-
-    return interaction.editReply(
-      [
-        "**Guild Configuration**",
-        `• Economy Multiplier: **${doc.economyMultiplier ?? 1}**`,
-        `• GM Role: ${gmRoleText}`,
-        `• Default Region: **${defaultRegionText}**`,
-        `• Player Channels: ${chText}`,
-        `• Allowed Regions: ${regionsText}`,
-        `• Rarity Overrides:\n${rarityLines}`,
-      ].join("\n"),
-    );
+    const embed = buildGuildConfigEmbed(doc);
+    return interaction.editReply({ embeds: [embed] });
   }
+}
+
+// Render the read-only `/guildconfig view` embed (#81). Exposed for tests
+// and potential reuse by a future button that re-renders zoomed-in
+// sections (e.g. Economy / Regions / Rarity breakouts).
+export function buildGuildConfigEmbed(doc: GuildConfigDoc): EmbedBuilder {
+  const gmRoleText = doc.gmRoleId ? `<@&${doc.gmRoleId}>` : "(none)";
+  const chText =
+    Array.isArray(doc.playerChannelIds) && doc.playerChannelIds.length
+      ? doc.playerChannelIds.map((id: string) => `<#${id}>`).join(", ")
+      : "(none)";
+  const regionsText =
+    Array.isArray(doc.allowedRegions) && doc.allowedRegions.length
+      ? doc.allowedRegions.join(", ")
+      : "(none)";
+  const defaultRegionText = doc.defaultRegionTag?.startsWith("region:")
+    ? doc.defaultRegionTag.slice("region:".length)
+    : (doc.defaultRegionTag ?? "(unset)");
+
+  // mapEntries handles both Map (hydrated) and Record<string, V> (lean)
+  // shapes — without it, Mongoose Map fields previously rendered as
+  // `[object Object]` on the lean path. See #16 for the helper, #81 for
+  // the user-visible bug.
+  const rarityEntries = mapEntries<{ min: number; max: number }>(doc.rarityOverrides as any);
+  const rarityLines = rarityEntries.length
+    ? rarityEntries.map(([k, v]) => `• **${k}**: ${v.min}–${v.max} gp`).join("\n")
+    : "_(none set)_";
+
+  return new EmbedBuilder().setTitle("Guild Configuration").addFields(
+    {
+      name: "Economy",
+      value: [`Multiplier: **${doc.economyMultiplier ?? 1}**`].join("\n"),
+      inline: true,
+    },
+    {
+      name: "GM Role",
+      value: gmRoleText,
+      inline: true,
+    },
+    {
+      name: "Default Region",
+      value: `**${defaultRegionText}**`,
+      inline: true,
+    },
+    {
+      name: "Player Channels",
+      value: chText,
+      inline: false,
+    },
+    {
+      name: "Allowed Regions",
+      value: regionsText,
+      inline: false,
+    },
+    {
+      name: "Rarity Overrides",
+      value: rarityLines,
+      inline: false,
+    },
+  );
 }

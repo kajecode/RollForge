@@ -179,26 +179,63 @@ describe("/guildconfig", () => {
   });
 
   describe("view subcommand", () => {
-    it("shows current config", async () => {
+    it("shows current config as an embed with named fields", async () => {
       guildConfigFindOne.mockReturnValue({
         lean: vi.fn().mockResolvedValue({
           economyMultiplier: 1.2,
           gmRoleId: "role-1",
           playerChannelIds: ["chan-1"],
           allowedRegions: ["eryndor"],
-          rarityOverrides: {},
+          rarityOverrides: { uncommon: { min: 100, max: 500 } },
           defaultRegionTag: "region:southwatch",
         }),
       });
       const interaction = makeInteraction("view");
       await guildconfig(interaction);
 
-      const reply = String(interaction.editReply.mock.calls[0][0]);
-      expect(reply).toContain("1.2");
-      expect(reply).toContain("role-1");
-      expect(reply).toContain("eryndor");
-      expect(reply).toMatch(/Default Region.*southwatch/);
-      expect(reply).not.toContain("region:southwatch");
+      const reply = interaction.editReply.mock.calls[0][0];
+      const embed = reply.embeds[0];
+      const data = embed.data ?? embed;
+      expect(data.title).toBe("Guild Configuration");
+
+      const fieldsByName = Object.fromEntries(
+        (data.fields ?? []).map((f: any) => [f.name, f.value]),
+      );
+      expect(fieldsByName.Economy).toContain("1.2");
+      expect(fieldsByName["GM Role"]).toContain("role-1");
+      expect(fieldsByName["Allowed Regions"]).toContain("eryndor");
+      expect(fieldsByName["Default Region"]).toContain("southwatch");
+      expect(fieldsByName["Default Region"]).not.toContain("region:southwatch");
+      // rarityOverrides (Map) must render its entries, not [object Object] (#81)
+      expect(fieldsByName["Rarity Overrides"]).toContain("uncommon");
+      expect(fieldsByName["Rarity Overrides"]).toContain("100");
+      expect(fieldsByName["Rarity Overrides"]).toContain("500");
+      expect(fieldsByName["Rarity Overrides"]).not.toContain("[object Object]");
+    });
+
+    it("renders rarityOverrides as a real Map (hydrated-doc path)", async () => {
+      guildConfigFindOne.mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          economyMultiplier: 1,
+          gmRoleId: null,
+          playerChannelIds: [],
+          allowedRegions: [],
+          // Simulate Mongoose Map — mapEntries must still iterate correctly
+          rarityOverrides: new Map([["rare", { min: 2000, max: 5000 }]]),
+          defaultRegionTag: null,
+        }),
+      });
+      const interaction = makeInteraction("view");
+      await guildconfig(interaction);
+
+      const reply = interaction.editReply.mock.calls[0][0];
+      const embed = reply.embeds[0];
+      const data = embed.data ?? embed;
+      const fieldsByName = Object.fromEntries(
+        (data.fields ?? []).map((f: any) => [f.name, f.value]),
+      );
+      expect(fieldsByName["Rarity Overrides"]).toContain("rare");
+      expect(fieldsByName["Rarity Overrides"]).toContain("2000");
     });
 
     it("handles missing config gracefully", async () => {
