@@ -36,7 +36,7 @@
     "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
     "mongodb": "7.1.1",
-    "mongoose": "9.3.2",
+    "mongoose": "9.7.2",
     "openai": "6.32.0",
     "p-limit": "^7.3.0",
     "winston": "3.17.0",
